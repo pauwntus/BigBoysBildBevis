@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Åre Olympiaden 🏔️</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap');
+
+:root {
+–bg: #0c1525;
+–card: #152035;
+–card2: #1a2a45;
+–blue: #2d6be4;
+–cyan: #00d4ff;
+–gold: #ffd700;
+–silver: #c0c0c0;
+–bronze: #cd7f32;
+–text: #eef2ff;
+–muted: #6b82a8;
+–red: #ff4757;
+–green: #2ed573;
+–border: rgba(255,255,255,0.08);
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+font-family: ‘Nunito’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background:
+radial-gradient(ellipse at 20% 50%, rgba(45,107,228,0.15) 0%, transparent 50%),
+radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.1) 0%, transparent 40%);
+pointer-events: none;
+z-index: 0;
+}
+
+.screen {
+display: none;
+min-height: 100vh;
+padding: 24px 20px 48px;
+position: relative;
+z-index: 1;
+max-width: 480px;
+margin: 0 auto;
+animation: fadeIn 0.3s ease;
+flex-direction: column;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.title-huge {
+font-family: ‘Bebas Neue’, cursive;
+font-size: clamp(52px, 15vw, 80px);
+letter-spacing: 2px;
+line-height: 0.9;
+background: linear-gradient(135deg, #fff 0%, var(–cyan) 60%, var(–blue) 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.title-sub {
+font-family: ‘Bebas Neue’, cursive;
+font-size: 18px;
+letter-spacing: 4px;
+color: var(–cyan);
+opacity: 0.8;
+margin-top: 4px;
+}
+.section-title {
+font-family: ‘Bebas Neue’, cursive;
+font-size: 28px;
+letter-spacing: 2px;
+color: var(–cyan);
+margin-bottom: 16px;
+}
+
+.btn {
+display: block; width: 100%; padding: 16px 24px;
+border: none; border-radius: 14px;
+font-family: ‘Nunito’, sans-serif; font-weight: 900; font-size: 17px;
+cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.5px;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.btn-primary { background: linear-gradient(135deg, var(–blue), var(–cyan)); color: #fff; box-shadow: 0 4px 20px rgba(45,107,228,0.4); }
+.btn-secondary { background: var(–card2); color: var(–text); border: 1px solid var(–border); }
+.btn-ghost { background: transparent; color: var(–muted); font-size: 15px; }
+.btn-gold { background: linear-gradient(135deg, #f5a623, var(–gold)); color: #000; box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
+
+input[type=“text”] {
+width: 100%; padding: 16px 18px;
+background: var(–card2); border: 1.5px solid var(–border);
+border-radius: 14px; color: var(–text);
+font-family: ‘Nunito’, sans-serif; font-size: 17px; font-weight: 700;
+outline: none; transition: border-color 0.2s;
+}
+input[type=“text”]:focus { border-color: var(–cyan); }
+input[type=“text”]::placeholder { color: var(–muted); font-weight: 600; }
+
+.card { background: var(–card); border: 1px solid var(–border); border-radius: 18px; padding: 20px; margin-bottom: 12px; }
+.card-highlight { background: linear-gradient(135deg, var(–card2), rgba(45,107,228,0.2)); border: 1px solid rgba(45,107,228,0.3); border-radius: 18px; padding: 20px; margin-bottom: 12px; }
+
+.game-code { font-family: ‘Bebas Neue’, cursive; font-size: 72px; letter-spacing: 10px; color: var(–gold); text-align: center; text-shadow: 0 0 30px rgba(255,215,0,0.4); margin: 8px 0; }
+
+.challenge-box { background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(45,107,228,0.1)); border: 2px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 24px; text-align: center; margin: 20px 0; }
+.challenge-emoji { font-size: 52px; margin-bottom: 12px; display: block; }
+.challenge-text { font-size: 22px; font-weight: 900; line-height: 1.3; color: #fff; }
+.challenge-type { font-size: 12px; font-weight: 700; letter-spacing: 3px; color: var(–cyan); text-transform: uppercase; margin-bottom: 8px; }
+
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.photo-card { background: var(–card2); border: 2px solid var(–border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; position: relative; }
+.photo-card.voted { border-color: var(–cyan); box-shadow: 0 0 16px rgba(0,212,255,0.3); }
+.photo-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.photo-card .vote-overlay { position: absolute; inset: 0; background: rgba(0,212,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 36px; opacity: 0; transition: opacity 0.2s; }
+.photo-card.voted .vote-overlay { opacity: 1; }
+.photo-label { padding: 8px 10px; font-size: 13px; font-weight: 700; color: var(–muted); text-align: center; }
+
+.upload-area { border: 2px dashed rgba(0,212,255,0.4); border-radius: 18px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(0,212,255,0.03); }
+.upload-area:active { border-color: var(–cyan); background: rgba(0,212,255,0.08); }
+.upload-area .upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-area p { color: var(–muted); font-weight: 700; }
+
+.player-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(–card2); border-radius: 12px; margin-bottom: 8px; }
+.player-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+.lb-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; margin-bottom: 8px; background: var(–card); border: 1px solid var(–border); }
+.lb-item.rank-1 { background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05)); border-color: rgba(255,215,0,0.4); }
+.lb-item.rank-2 { background: linear-gradient(135deg, rgba(192,192,192,0.1), transparent); border-color: rgba(192,192,192,0.3); }
+.lb-item.rank-3 { background: linear-gradient(135deg, rgba(205,127,50,0.1), transparent); border-color: rgba(205,127,50,0.3); }
+.lb-rank { font-family: ‘Bebas Neue’, cursive; font-size: 28px; width: 36px; text-align: center; }
+.rank-1 .lb-rank { color: var(–gold); } .rank-2 .lb-rank { color: var(–silver); } .rank-3 .lb-rank { color: var(–bronze); }
+
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.badge-waiting { background: rgba(107,130,168,0.2); color: var(–muted); }
+.badge-active { background: rgba(46,213,115,0.2); color: var(–green); }
+.badge-voting { background: rgba(0,212,255,0.2); color: var(–cyan); }
+
+.result-bar { background: var(–card2); border-radius: 8px; height: 8px; margin-top: 8px; overflow: hidden; }
+.result-bar-fill { height: 100%; background: linear-gradient(90deg, var(–blue), var(–cyan)); border-radius: 8px; transition: width 0.8s ease; }
+
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(–card2); border: 1px solid var(–border); border-radius: 12px; padding: 12px 20px; font-weight: 700; font-size: 15px; z-index: 1000; transition: transform 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.mt-8{margin-top:8px} .mt-12{margin-top:12px} .mt-16{margin-top:16px} .mt-20{margin-top:20px} .mt-auto{margin-top:auto}
+.mb-8{margin-bottom:8px} .mb-16{margin-bottom:16px}
+.text-center{text-align:center} .text-muted{color:var(–muted);font-size:14px;font-weight:600}
+.text-small{font-size:13px} .divider{height:1px;background:var(–border);margin:20px 0}
+
+input[type=“file”] { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; display: inline-block; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.pulsing { animation: pulse 2s ease infinite; }
+
+.label { font-weight: 800; font-size: 14px; letter-spacing: 1px; color: var(–muted); text-transform: uppercase; margin-bottom: 8px; display: block; }
+</style>
+
+</head>
+<body>
+
+<!-- HOME -->
+
+<div id="screen-home" class="screen active">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <div class="title-sub">⛷️ VÄLKOMMEN TILL</div>
+    <div class="title-huge">ÅRE<br>OLYMPIADEN</div>
+    <p class="text-muted mt-16" style="font-size:16px;line-height:1.6;">Dagliga fotoutmaningar. Anonym röstning. Veckans olympier koras.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <button class="btn btn-primary" onclick="showScreen('screen-create')">🏠 Skapa spel</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-join')">🔗 Gå med i spel</button>
+  </div>
+</div>
+
+<!-- CREATE -->
+
+<div id="screen-create" class="screen">
+  <div class="section-title">SKAPA SPEL</div>
+  <p class="text-muted mb-16">Du blir värd och delar koden med kompisarna.</p>
+  <span class="label">Ditt namn</span>
+  <input type="text" id="create-name" placeholder="T.ex. Magnus" maxlength="20">
+  <div class="mt-16 mb-16">
+    <span class="label">Antal dagar</span>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="days-picker">
+      <button class="btn btn-secondary days-btn" data-days="3" onclick="selectDays(3)">3</button>
+      <button class="btn btn-primary days-btn" data-days="5" onclick="selectDays(5)">5</button>
+      <button class="btn btn-secondary days-btn" data-days="7" onclick="selectDays(7)">7</button>
+      <button class="btn btn-secondary days-btn" data-days="10" onclick="selectDays(10)">10</button>
+    </div>
+  </div>
+  <div class="mt-auto" style="display:flex;flex-direction:column;gap:10px;">
+    <button class="btn btn-primary" id="create-btn" onclick="createGame()">Skapa & dela kod 🎮</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-home')">← Tillbaka</button>
+  </div>
+</div>
+
+<!-- JOIN -->
+
+<div id="screen-join" class="screen">
+  <div class="section-title">GÅ MED I SPEL</div>
+  <p class="text-muted mb-16">Skriv in koden du fått av värden.</p>
+  <span class="label">Ditt namn</span>
+  <input type="text" id="join-name" placeholder="T.ex. Erik" maxlength="20">
+  <div class="mt-16">
+    <span class="label">Spelkod</span>
+    <input type="text" id="join-code" placeholder="1234" maxlength="4" style="font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:8px;text-align:center;">
+  </div>
+  <div class="mt-auto" style="display:flex;flex-direction:column;gap:10px;margin-top:24px;">
+    <button class="btn btn-primary" id="join-btn" onclick="joinGame()">Gå med 🚀</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-home')">← Tillbaka</button>
+  </div>
+</div>
+
+<!-- LOBBY -->
+
+<div id="screen-lobby" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="section-title" style="margin-bottom:4px;">LOBBY</div>
+      <span class="badge badge-waiting">Väntar på spelare</span>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:2px;">KOD</div>
+      <div id="lobby-code-display" style="font-family:'Bebas Neue',cursive;font-size:40px;color:var(--gold);letter-spacing:6px;"></div>
+    </div>
+  </div>
+  <div id="lobby-players"></div>
+  <div class="card-highlight mt-12">
+    <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">DAGENS UTMANING (DAG 1)</div>
+    <div id="lobby-challenge-preview" style="font-size:15px;font-weight:800;">Slumpas när spelet startar</div>
+  </div>
+  <div id="host-controls" style="margin-top:auto;padding-top:20px;display:none;">
+    <button class="btn btn-gold" onclick="startGame()" id="start-btn" disabled>🏁 Starta dag 1</button>
+    <p class="text-muted text-center mt-8" style="font-size:13px;">Minst 2 spelare krävs</p>
+  </div>
+  <div id="guest-waiting" style="margin-top:auto;padding-top:20px;display:none;text-align:center;">
+    <span class="spinning" style="font-size:28px;">⏳</span>
+    <p class="text-muted mt-8">Väntar på att värden startar...</p>
+  </div>
+</div>
+
+<!-- CHALLENGE -->
+
+<div id="screen-challenge" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <span id="challenge-day-badge" class="badge badge-active">DAG 1</span>
+    <button class="btn btn-ghost" style="width:auto;padding:8px 12px;font-size:13px;" onclick="goToLeaderboard()">🏆 Poäng</button>
+  </div>
+  <div class="challenge-box">
+    <span id="challenge-emoji-big" class="challenge-emoji">📸</span>
+    <div id="challenge-type-label" class="challenge-type">FOTOUTMANING</div>
+    <div id="challenge-text-big" class="challenge-text">Laddar...</div>
+  </div>
+  <div id="upload-section">
+    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📷</div>
+      <p>Tryck för att ta/välja foto</p>
+      <p class="text-small text-muted mt-8">Ditt foto är anonymt under röstningen</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileUpload(event)">
+    <div id="photo-preview-section" style="display:none;margin-top:16px;">
+      <img id="photo-preview" style="width:100%;border-radius:14px;max-height:300px;object-fit:cover;">
+      <button class="btn btn-primary mt-12" id="submit-photo-btn" onclick="submitPhoto()">📤 Skicka in foto</button>
+      <button class="btn btn-ghost mt-8" onclick="resetPhoto()">↩️ Välj annat foto</button>
+    </div>
+  </div>
+  <div id="waiting-for-others" style="display:none;text-align:center;padding:20px 0;">
+    <div style="font-size:56px;margin-bottom:12px;" class="pulsing">⏳</div>
+    <div style="font-weight:900;font-size:18px;margin-bottom:8px;">Foto inlämnat!</div>
+    <p class="text-muted">Väntar på att alla skickar in...</p>
+    <div id="submitted-count" class="mt-16" style="font-family:'Bebas Neue',cursive;font-size:48px;color:var(--cyan);"></div>
+    <p class="text-muted text-small">har skickat in</p>
+  </div>
+</div>
+
+<!-- VOTING -->
+
+<div id="screen-voting" class="screen">
+  <span class="badge badge-voting" style="margin-bottom:8px;">RÖSTNING PÅGÅR</span>
+  <div class="section-title mt-8">RÖSTA PÅ BÄSTA FOTO</div>
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">UTMANINGEN VAR</div>
+    <div id="voting-challenge-text" style="font-weight:800;font-size:15px;"></div>
+  </div>
+  <div id="photo-grid" class="photo-grid"></div>
+  <button class="btn btn-primary mt-16" id="vote-submit-btn" onclick="submitVote()" style="display:none;">✅ Lås in röst</button>
+  <div id="vote-waiting" style="display:none;text-align:center;padding:20px 0;">
+    <div style="font-size:56px;margin-bottom:12px;" class="pulsing">🗳️</div>
+    <div style="font-weight:900;font-size:18px;margin-bottom:8px;">Röst inlagd!</div>
+    <p class="text-muted">Väntar på att alla röstar...</p>
+    <div id="vote-count" class="mt-16" style="font-family:'Bebas Neue',cursive;font-size:48px;color:var(--cyan);"></div>
+    <p class="text-muted text-small">har röstat</p>
+  </div>
+</div>
+
+<!-- RESULTS -->
+
+<div id="screen-results" class="screen">
+  <div class="section-title">DAGENS RESULTAT</div>
+  <div class="card-highlight text-center" style="margin-bottom:20px;">
+    <div style="font-size:52px;margin-bottom:8px;">🥇</div>
+    <div style="font-size:13px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:4px;">VINNARE</div>
+    <div id="winner-name" style="font-family:'Bebas Neue',cursive;font-size:40px;color:#fff;"></div>
+    <div id="winner-votes" class="text-muted mt-8"></div>
+  </div>
+  <div id="results-list"></div>
+  <div id="result-actions" style="margin-top:auto;padding-top:20px;display:flex;flex-direction:column;gap:10px;"></div>
+</div>
+
+<!-- LEADERBOARD -->
+
+<div id="screen-leaderboard" class="screen">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <button class="btn btn-ghost" style="width:auto;padding:8px;" onclick="showScreen(prevScreen)">←</button>
+    <div class="section-title" style="margin-bottom:0;">POÄNGTABELL</div>
+  </div>
+  <div id="leaderboard-list"></div>
+  <div id="leaderboard-history" style="margin-top:20px;"></div>
+</div>
+
+<!-- FINAL -->
+
+<div id="screen-final" class="screen" style="text-align:center;">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <div style="font-size:64px;margin-bottom:16px;">🏆</div>
+    <div class="title-huge" style="margin-bottom:8px;">OLYMP-<br>IEREN</div>
+    <div id="final-winner" style="font-family:'Bebas Neue',cursive;font-size:36px;color:var(--gold);margin-bottom:8px;"></div>
+    <div id="final-score" class="text-muted"></div>
+    <div class="divider"></div>
+    <div id="final-podium" style="margin-top:8px;text-align:left;"></div>
+  </div>
+  <button class="btn btn-secondary mt-20" onclick="resetAll()">🔄 Nytt spel</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  SUPABASE SETUP
+// ═══════════════════════════════════════
+const SUPABASE_URL = 'https://qfopolrxfnilhxzknmkl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_G1axvniFKDW0xQt94bhLYQ_CImljqte';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let myId = localStorage.getItem('are_player_id') || null;
+let myName = localStorage.getItem('are_player_name') || '';
+let gameId = localStorage.getItem('are_game_id') || null;
+let isHost = false;
+let selectedDays = 5;
+let selectedVoteId = null;
+let myPhotoData = null;
+let prevScreen = 'screen-challenge';
+let realtimeSub = null;
+
+const COLORS = ['#2d6be4','#00d4ff','#ff4757','#2ed573','#ffd700','#ff6b81','#a29bfe','#eccc68'];
+const EMOJIS = ['🎿','⛷️','🏔️','🥇','🦊','🐻','🦁','🐯'];
+
+const CHALLENGES = [
+  { emoji:"🤡", type:"Pinsamt", text:"Ta en bild som ser ut som ett passfoto från helvetet" },
+  { emoji:"🎿", type:"På pisten", text:"Bästa actionfoto på väg nerför en pist" },
+  { emoji:"🏔️", type:"Utsikt", text:"Mest episk utsikt du hittar idag" },
+  { emoji:"😴", type:"Avslappnad", text:"Vem ser mest avslappnad ut i liften?" },
+  { emoji:"🍕", type:"Mat", text:"Mest aptitretande eller äckliga mat du ser idag" },
+  { emoji:"💪", type:"Styrka", text:"Tuffaste posen du kan ta med skidutrustningen" },
+  { emoji:"🐧", type:"Djur", text:"Hitta något som liknar ett djur i snön" },
+  { emoji:"👯", type:"Kopia", text:"Kopiera exakt vad en annan skiåkare gör utan att de märker" },
+  { emoji:"🌅", type:"Natur", text:"Vackraste solljuset du hittar på pisten" },
+  { emoji:"🕺", type:"Dans", text:"Bästa dansen du kan göra med skidstavar" },
+  { emoji:"😱", type:"Skräck", text:"Ta en bild som ser ut som du precis ska dö (men är säker!)" },
+  { emoji:"🤝", type:"Vänskap", text:"Få en helt okänd person att ställa upp på ett foto med dig" },
+  { emoji:"🍺", type:"Après-ski", text:"Mest överdrivna après-ski-viben du hittar" },
+  { emoji:"🧊", type:"Snö", text:"Skapa något i snön på 60 sekunder – fota resultatet" },
+  { emoji:"🎭", type:"Teater", text:"Dramatisera att du förlorar balansen – fota precis rätt ögonblick" },
+  { emoji:"👑", type:"Royalty", text:"Posa som kung eller drottning av berget" },
+  { emoji:"🦆", type:"Imitation", text:"Imitera en ankgång nerför pisten – fota" },
+  { emoji:"🕵️", type:"Spaning", text:"Fota någon som gör något pinsamt UTAN att de märker" },
+  { emoji:"🏠", type:"Stugan", text:"Konstnärligaste bilden av lägenheten eller stugan" },
+  { emoji:"🍳", type:"Matlagning", text:"Dramatiskaste matlagningsfotot från kvällens middag" },
+  { emoji:"🥳", type:"Fest", text:"Vem kan se mest festlig ut utan att ha festat?" },
+  { emoji:"🦸", type:"Superhjälte", text:"Ta din bästa superhjältepositon på toppen av en backe" },
+  { emoji:"🌙", type:"Kväll", text:"Mysigaste kvällsstämningen från stugan" },
+  { emoji:"🎯", type:"Precision", text:"Bygg ett mål i snön och fota någon som kastar en snöboll mot det" },
+  { emoji:"🌭", type:"Mat", text:"Fota någon i gruppen som ser ut att äta sin sista måltid" },
+];
+
+function shuffled(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+// ═══════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goToLeaderboard() {
+  prevScreen = document.querySelector('.screen.active').id;
+  renderLeaderboard();
+  showScreen('screen-leaderboard');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? '⏳ Laddar...' : text;
+}
+
+// ═══════════════════════════════════════
+//  DAYS PICKER
+// ═══════════════════════════════════════
+function selectDays(n) {
+  selectedDays = n;
+  document.querySelectorAll('.days-btn').forEach(b => {
+    b.className = parseInt(b.dataset.days) === n ? 'btn btn-primary days-btn' : 'btn btn-secondary days-btn';
+  });
+}
+
+// ═══════════════════════════════════════
+//  CREATE GAME
+// ═══════════════════════════════════════
+async function createGame() {
+  const name = document.getElementById('create-name').value.trim();
+  if (!name) { showToast('Skriv in ditt namn!'); return; }
+
+  setLoading('create-btn', true, '');
+  try {
+    const challenges = shuffled(CHALLENGES).slice(0, selectedDays);
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const { data: game, error: ge } = await sb.from('games').insert({
+      code, phase: 'lobby', current_day: 0, total_days: selectedDays,
+      challenges: challenges
+    }).select().single();
+    if (ge) throw ge;
+
+    myName = name;
+    const colorIdx = 0;
+    const { data: player, error: pe } = await sb.from('players').insert({
+      game_id: game.id, name, color: COLORS[colorIdx], emoji: EMOJIS[colorIdx],
+      score: 0, is_host: true
+    }).select().single();
+    if (pe) throw pe;
+
+    myId = player.id;
+    gameId = game.id;
+    isHost = true;
+    localStorage.setItem('are_player_id', myId);
+    localStorage.setItem('are_player_name', myName);
+    localStorage.setItem('are_game_id', gameId);
+
+    subscribeToGame();
+    await renderLobby();
+    showScreen('screen-lobby');
+  } catch(e) {
+    console.error(e);
+    showToast('Kunde inte skapa spel 😅');
+  }
+  setLoading('create-btn', false, 'Skapa & dela kod 🎮');
+}
+
+// ═══════════════════════════════════════
+//  JOIN GAME
+// ═══════════════════════════════════════
+async function joinGame() {
+  const name = document.getElementById('join-name').value.trim();
+  const code = document.getElementById('join-code').value.trim();
+  if (!name) { showToast('Skriv in ditt namn!'); return; }
+  if (code.length !== 4) { showToast('Ange en 4-siffrig kod!'); return; }
+
+  setLoading('join-btn', true, '');
+  try {
+    const { data: game, error: ge } = await sb.from('games').select('*').eq('code', code).single();
+    if (ge || !game) { showToast('Hittade inget spel med den koden 😅'); setLoading('join-btn', false, 'Gå med 🚀'); return; }
+
+    gameId = game.id;
+
+    // Check if rejoining
+    const { data: existing } = await sb.from('players').select('*').eq('game_id', gameId).eq('name', name).maybeSingle();
+    let player;
+    if (existing) {
+      player = existing;
+    } else {
+      const { data: allPlayers } = await sb.from('players').select('*').eq('game_id', gameId);
+      const colorIdx = (allPlayers?.length || 0) % COLORS.length;
+      const { data: p, error: pe } = await sb.from('players').insert({
+        game_id: gameId, name, color: COLORS[colorIdx], emoji: EMOJIS[colorIdx],
+        score: 0, is_host: false
+      }).select().single();
+      if (pe) throw pe;
+      player = p;
+    }
+
+    myId = player.id;
+    myName = name;
+    isHost = player.is_host;
+    localStorage.setItem('are_player_id', myId);
+    localStorage.setItem('are_player_name', myName);
+    localStorage.setItem('are_game_id', gameId);
+
+    subscribeToGame();
+
+    // Route to correct screen
+    if (game.phase === 'lobby') { await renderLobby(); showScreen('screen-lobby'); }
+    else if (game.phase === 'challenge') { await renderChallenge(game); showScreen('screen-challenge'); }
+    else if (game.phase === 'voting') { await renderVoting(game); showScreen('screen-voting'); }
+    else if (game.phase === 'results') { await renderResults(game); showScreen('screen-results'); }
+    else if (game.phase === 'final') { await renderFinal(game); showScreen('screen-final'); }
+
+  } catch(e) {
+    console.error(e);
+    showToast('Något gick fel 😅');
+  }
+  setLoading('join-btn', false, 'Gå med 🚀');
+}
+
+// ═══════════════════════════════════════
+//  REALTIME
+// ═══════════════════════════════════════
+function subscribeToGame() {
+  if (realtimeSub) sb.removeChannel(realtimeSub);
+
+  realtimeSub = sb.channel('game-' + gameId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `id=eq.${gameId}` }, async (payload) => {
+      const game = payload.new;
+      const curScreen = document.querySelector('.screen.active')?.id;
+
+      if (game.phase === 'lobby' && curScreen === 'screen-lobby') await renderLobby();
+      else if (game.phase === 'challenge') { await renderChallenge(game); showScreen('screen-challenge'); }
+      else if (game.phase === 'voting') { await renderVoting(game); showScreen('screen-voting'); }
+      else if (game.phase === 'results') { await renderResults(game); showScreen('screen-results'); }
+      else if (game.phase === 'final') { await renderFinal(game); showScreen('screen-final'); }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` }, async () => {
+      const curScreen = document.querySelector('.screen.active')?.id;
+      if (curScreen === 'screen-lobby') await renderLobby();
+      if (curScreen === 'screen-leaderboard') renderLeaderboard();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions', filter: `game_id=eq.${gameId}` }, async () => {
+      const curScreen = document.querySelector('.screen.active')?.id;
+      if (curScreen === 'screen-challenge') await updateSubmittedCount();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes', filter: `game_id=eq.${gameId}` }, async () => {
+      const curScreen = document.querySelector('.screen.active')?.id;
+      if (curScreen === 'screen-voting') await updateVoteCount();
+    })
+    .subscribe();
+}
+
+// ═══════════════════════════════════════
+//  LOBBY
+// ═══════════════════════════════════════
+async function renderLobby() {
+  const { data: game } = await sb.from('games').select('*').eq('id', gameId).single();
+  const { data: players } = await sb.from('players').select('*').eq('game_id', gameId).order('created_at');
+
+  document.getElementById('lobby-code-display').textContent = game.code;
+
+  document.getElementById('lobby-players').innerHTML = players.map(p => `
+    <div class="player-item">
+      <div class="player-avatar" style="background:${p.color}20;border:2px solid ${p.color}">${p.emoji}</div>
+      <div>
+        <div style="font-weight:800;">${p.name}${p.id === myId ? ' (dig)' : ''}</div>
+        <div class="text-muted text-small">${p.is_host ? '👑 Värd' : '🎮 Spelare'}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const c = game.challenges?.[0];
+  document.getElementById('lobby-challenge-preview').textContent = c ? `${c.emoji} ${c.text}` : '–';
+
+  const myPlayer = players.find(p => p.id === myId);
+  if (myPlayer?.is_host) {
+    isHost = true;
+    document.getElementById('host-controls').style.display = 'block';
+    document.getElementById('guest-waiting').style.display = 'none';
+    const startBtn = document.getElementById('start-btn');
+    startBtn.disabled = players.length < 2;
+  } else {
+    document.getElementById('host-controls').style.display = 'none';
+    document.getElementById('guest-waiting').style.display = 'block';
+  }
+}
+
+async function startGame() {
+  await sb.from('games').update({ phase: 'challenge', current_day: 0 }).eq('id', gameId);
+}
+
+// ═══════════════════════════════════════
+//  CHALLENGE
+// ═══════════════════════════════════════
+async function renderChallenge(game) {
+  if (!game) {
+    const { data } = await sb.from('games').select('*').eq('id', gameId).single();
+    game = data;
+  }
+  const day = game.current_day;
+  const challenge = game.challenges[day];
+
+  document.getElementById('challenge-day-badge').textContent = `DAG ${day + 1}`;
+  document.getElementById('challenge-emoji-big').textContent = challenge.emoji;
+  document.getElementById('challenge-type-label').textContent = challenge.type.toUpperCase();
+  document.getElementById('challenge-text-big').textContent = challenge.text;
+
+  // Check if already submitted
+  const { data: existing } = await sb.from('submissions').select('id').eq('game_id', gameId).eq('player_id', myId).eq('day', day).maybeSingle();
+
+  myPhotoData = null;
+  document.getElementById('upload-section').style.display = existing ? 'none' : 'block';
+  document.getElementById('photo-preview-section').style.display = 'none';
+  document.getElementById('waiting-for-others').style.display = existing ? 'block' : 'none';
+
+  if (existing) await updateSubmittedCount();
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Compress image
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
+      else if (h > MAX) { w = w * MAX / h; h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      myPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+      document.getElementById('photo-preview').src = myPhotoData;
+      document.getElementById('photo-preview-section').style.display = 'block';
+      document.getElementById('upload-area')?.parentElement.querySelector('.upload-area') && (document.querySelector('.upload-area').style.display = 'none');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetPhoto() {
+  myPhotoData = null;
+  document.getElementById('photo-preview-section').style.display = 'none';
+  document.querySelector('.upload-area').style.display = 'block';
+  document.getElementById('file-input').value = '';
+}
+
+async function submitPhoto() {
+  if (!myPhotoData) return;
+  const btn = document.getElementById('submit-photo-btn');
+  btn.disabled = true; btn.textContent = '⏳ Skickar...';
+
+  const { data: game } = await sb.from('games').select('current_day').eq('id', gameId).single();
+  const day = game.current_day;
+
+  const { error } = await sb.from('submissions').insert({ game_id: gameId, player_id: myId, day, photo: myPhotoData });
+  if (error) { showToast('Kunde inte skicka foto 😅'); btn.disabled = false; btn.textContent = '📤 Skicka in foto'; return; }
+
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('waiting-for-others').style.display = 'block';
+  await updateSubmittedCount();
+}
+
+async function updateSubmittedCount() {
+  const { data: game } = await sb.from('games').select('current_day, total_days').eq('id', gameId).single();
+  const { data: subs } = await sb.from('submissions').select('id').eq('game_id', gameId).eq('day', game.current_day);
+  const { data: players } = await sb.from('players').select('id').eq('game_id', gameId);
+
+  const submitted = subs?.length || 0;
+  const total = players?.length || 0;
+  document.getElementById('submitted-count').textContent = `${submitted}/${total}`;
+
+  if (submitted >= total && total >= 2) {
+    if (isHost) {
+      await sb.from('games').update({ phase: 'voting' }).eq('id', gameId);
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+//  VOTING
+// ═══════════════════════════════════════
+async function renderVoting(game) {
+  if (!game) {
+    const { data } = await sb.from('games').select('*').eq('id', gameId).single();
+    game = data;
+  }
+  const day = game.current_day;
+  const challenge = game.challenges[day];
+  document.getElementById('voting-challenge-text').textContent = `${challenge.emoji} ${challenge.text}`;
+
+  const { data: subs } = await sb.from('submissions').select('*, players(name, id)').eq('game_id', gameId).eq('day', day);
+
+  // Shuffle for anonymity
+  const shuffledSubs = shuffled(subs || []);
+  selectedVoteId = null;
+
+  // Check if already voted
+  const { data: myVote } = await sb.from('votes').select('id, voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('day', day).maybeSingle();
+
+  const grid = document.getElementById('photo-grid');
+  grid.innerHTML = shuffledSubs.map((sub, i) => {
+    const isMe = sub.player_id === myId;
+    const alreadyVoted = myVote?.voted_for_id === sub.player_id;
+    return `
+      <div class="photo-card ${alreadyVoted ? 'voted' : ''}" id="pcard-${i}" onclick="${isMe ? "showToast('Du kan inte rösta på dig själv! 😜')" : `selectVote(${i}, '${sub.player_id}')`}">
+        <img src="${sub.photo}" alt="Foto ${i+1}">
+        <div class="vote-overlay">✅</div>
+        <div class="photo-label">${isMe ? 'Ditt foto' : `Foto ${i+1}`}</div>
+      </div>
+    `;
+  }).join('');
+
+  if (myVote) {
+    document.getElementById('vote-submit-btn').style.display = 'none';
+    document.getElementById('vote-waiting').style.display = 'block';
+    grid.style.opacity = '0.6';
+    grid.style.pointerEvents = 'none';
+    await updateVoteCount();
+  } else {
+    document.getElementById('vote-submit-btn').style.display = 'none';
+    document.getElementById('vote-waiting').style.display = 'none';
+    grid.style.opacity = '1';
+    grid.style.pointerEvents = 'auto';
+  }
+}
+
+function selectVote(index, playerId) {
+  selectedVoteId = playerId;
+  document.querySelectorAll('.photo-card').forEach((c, i) => c.classList.toggle('voted', i === index));
+  document.getElementById('vote-submit-btn').style.display = 'block';
+}
+
+async function submitVote() {
+  if (!selectedVoteId) return;
+  const btn = document.getElementById('vote-submit-btn');
+  btn.disabled = true; btn.textContent = '⏳ Låser in...';
+
+  const { data: game } = await sb.from('games').select('current_day').eq('id', gameId).single();
+
+  const { error } = await sb.from('votes').insert({ game_id: gameId, voter_id: myId, voted_for_id: selectedVoteId, day: game.current_day });
+  if (error) { showToast('Kunde inte lägga röst 😅'); btn.disabled = false; btn.textContent = '✅ Lås in röst'; return; }
+
+  document.getElementById('photo-grid').style.opacity = '0.6';
+  document.getElementById('photo-grid').style.pointerEvents = 'none';
+  document.getElementById('vote-submit-btn').style.display = 'none';
+  document.getElementById('vote-waiting').style.display = 'block';
+  await updateVoteCount();
+}
+
+async function updateVoteCount() {
+  const { data: game } = await sb.from('games').select('current_day').eq('id', gameId).single();
+  const { data: votes } = await sb.from('votes').select('id').eq('game_id', gameId).eq('day', game.current_day);
+  const { data: players } = await sb.from('players').select('id').eq('game_id', gameId);
+
+  const voted = votes?.length || 0;
+  const total = players?.length || 0;
+  document.getElementById('vote-count').textContent = `${voted}/${total}`;
+
+  if (voted >= total && total >= 2 && isHost) {
+    await tallyAndAdvance(game.current_day);
+  }
+}
+
+async function tallyAndAdvance(day) {
+  const { data: votes } = await sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('day', day);
+  const { data: players } = await sb.from('players').select('*').eq('game_id', gameId);
+
+  const counts = {};
+  players.forEach(p => counts[p.id] = 0);
+  votes?.forEach(v => { if (v.voted_for_id) counts[v.voted_for_id] = (counts[v.voted_for_id] || 0) + 1; });
+
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const points = [5, 3, 1];
+
+  for (let i = 0; i < Math.min(3, sorted.length); i++) {
+    const [pid, voteCount] = sorted[i];
+    if (voteCount > 0) {
+      const player = players.find(p => p.id === pid);
+      if (player) {
+        await sb.from('players').update({ score: player.score + points[i] }).eq('id', pid);
+      }
+    }
+  }
+
+  const { data: gameData } = await sb.from('games').select('current_day, total_days').eq('id', gameId).single();
+  const isLast = gameData.current_day >= gameData.total_days - 1;
+
+  await sb.from('games').update({ phase: isLast ? 'final' : 'results' }).eq('id', gameId);
+}
+
+// ═══════════════════════════════════════
+//  RESULTS
+// ═══════════════════════════════════════
+async function renderResults(game) {
+  if (!game) {
+    const { data } = await sb.from('games').select('*').eq('id', gameId).single();
+    game = data;
+  }
+  const day = game.current_day;
+  const { data: votes } = await sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('day', day);
+  const { data: players } = await sb.from('players').select('*').eq('game_id', gameId).order('score', { ascending: false });
+
+  const counts = {};
+  players.forEach(p => counts[p.id] = 0);
+  votes?.forEach(v => { if (v.voted_for_id) counts[v.voted_for_id] = (counts[v.voted_for_id] || 0) + 1; });
+
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const totalVotes = votes?.length || 0;
+
+  const winnerId = sorted[0]?.[0];
+  const winner = players.find(p => p.id === winnerId);
+  const winnerVotes = sorted[0]?.[1] || 0;
+
+  document.getElementById('winner-name').textContent = winner?.name?.toUpperCase() || '–';
+  document.getElementById('winner-votes').textContent = `${winnerVotes} röst${winnerVotes !== 1 ? 'er' : ''}`;
+
+  const rewardMap = [5,3,1];
+  document.getElementById('results-list').innerHTML = sorted.map(([pid, vCount], rank) => {
+    const p = players.find(pl => pl.id === pid);
+    if (!p) return '';
+    const pct = totalVotes > 0 ? Math.round(vCount/totalVotes*100) : 0;
+    const pts = rank < 3 && vCount > 0 ? rewardMap[rank] : 0;
+    return `
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-family:'Bebas Neue',cursive;font-size:24px;color:${rank===0?'var(--gold)':rank===1?'var(--silver)':'var(--bronze)'};width:28px;">${rank+1}</div>
+          <div style="font-weight:800;">${p.name}</div>
+          <div style="margin-left:auto;font-weight:700;font-size:13px;color:var(--muted);">${vCount} röst${vCount!==1?'er':''}</div>
+          ${pts > 0 ? `<div style="font-family:'Bebas Neue',cursive;font-size:18px;color:var(--gold);">+${pts}p</div>` : ''}
+        </div>
+        <div class="result-bar"><div class="result-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+
+  const isLast = game.current_day >= game.total_days - 1;
+  const actions = document.getElementById('result-actions');
+  actions.innerHTML = '';
+
+  if (isHost && !isLast) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-primary';
+    btn.textContent = `➡️ Starta dag ${day + 2}`;
+    btn.onclick = nextDay;
+    actions.appendChild(btn);
+  } else if (isLast) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-gold';
+    btn.textContent = '🏆 Se slutresultat!';
+    btn.onclick = () => showScreen('screen-final');
+    actions.appendChild(btn);
+  } else {
+    const p = document.createElement('p');
+    p.className = 'text-muted text-center';
+    p.textContent = 'Väntar på att värden startar nästa dag...';
+    actions.appendChild(p);
+  }
+
+  const lbBtn = document.createElement('button');
+  lbBtn.className = 'btn btn-secondary';
+  lbBtn.textContent = '🏆 Se poängtabell';
+  lbBtn.onclick = goToLeaderboard;
+  actions.appendChild(lbBtn);
+}
+
+async function nextDay() {
+  const { data: game } = await sb.from('games').select('current_day').eq('id', gameId).single();
+  await sb.from('games').update({ phase: 'challenge', current_day: game.current_day + 1 }).eq('id', gameId);
+}
+
+// ═══════════════════════════════════════
+//  LEADERBOARD
+// ═══════════════════════════════════════
+async function renderLeaderboard() {
+  const { data: players } = await sb.from('players').select('*').eq('game_id', gameId).order('score', { ascending: false });
+
+  document.getElementById('leaderboard-list').innerHTML = (players || []).map((p, rank) => `
+    <div class="lb-item rank-${rank+1}">
+      <div class="lb-rank">${rank+1}</div>
+      <div class="player-avatar" style="background:${p.color}20;border:2px solid ${p.color}">${p.emoji}</div>
+      <div style="flex:1;">
+        <div style="font-weight:900;">${p.name}${p.id===myId?' (dig)':''}</div>
+      </div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:26px;color:var(--gold);">${p.score}p</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  FINAL
+// ═══════════════════════════════════════
+async function renderFinal(game) {
+  const { data: players } = await sb.from('players').select('*').eq('game_id', gameId).order('score', { ascending: false });
+  if (!players?.length) return;
+
+  const winner = players[0];
+  document.getElementById('final-winner').textContent = winner.name.toUpperCase();
+  document.getElementById('final-score').textContent = `${winner.score} poäng`;
+
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('final-podium').innerHTML = players.slice(0,3).map((p, rank) => `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="font-size:28px;">${medals[rank]}</div>
+      <div style="font-weight:900;font-size:18px;">${p.name}</div>
+      <div style="margin-left:auto;font-family:'Bebas Neue',cursive;font-size:24px;color:var(--gold);">${p.score}p</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════
+function resetAll() {
+  localStorage.removeItem('are_player_id');
+  localStorage.removeItem('are_player_name');
+  localStorage.removeItem('are_game_id');
+  if (realtimeSub) sb.removeChannel(realtimeSub);
+  myId = null; myName = ''; gameId = null; isHost = false;
+  showScreen('screen-home');
+}
+
+// ═══════════════════════════════════════
+//  INIT – restore session
+// ═══════════════════════════════════════
+(async () => {
+  if (myId && gameId) {
+    try {
+      const { data: game } = await sb.from('games').select('*').eq('id', gameId).single();
+      const { data: player } = await sb.from('players').select('*').eq('id', myId).single();
+      if (!game || !player) { resetAll(); return; }
+
+      isHost = player.is_host;
+      myName = player.name;
+      subscribeToGame();
+
+      if (game.phase === 'lobby') { await renderLobby(); showScreen('screen-lobby'); }
+      else if (game.phase === 'challenge') { await renderChallenge(game); showScreen('screen-challenge'); }
+      else if (game.phase === 'voting') { await renderVoting(game); showScreen('screen-voting'); }
+      else if (game.phase === 'results') { await renderResults(game); showScreen('screen-results'); }
+      else if (game.phase === 'final') { await renderFinal(game); showScreen('screen-final'); }
+    } catch(e) { /* no session */ }
+  }
+})();
+</script>
+
+</body>
+</html>
