@@ -314,12 +314,21 @@ input::placeholder { color: var(--muted); }
     <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="accent-line"></div>
-  <div id="selecting-card" class="challenge-card" style="margin:20px 0 24px;">
+  <button class="btn btn-yellow" style="margin:20px 0 12px;" onclick="randomizeChallenge()">🎲 Slumpa utmaning</button>
+  <div id="selecting-card" class="challenge-card" style="margin-bottom:20px;">
     <div class="challenge-emoji" id="sel-emoji">🎲</div>
     <div class="challenge-text" id="sel-text" style="color:var(--muted);">Tryck slumpa</div>
   </div>
+  <p class="text-muted" style="text-align:center; font-size:13px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">— eller skriv en egen —</p>
+  <div style="display:flex; gap:8px; margin-bottom:24px;">
+    <input id="custom-emoji" type="text" placeholder="🏆" maxlength="2"
+      style="width:56px; flex-shrink:0; text-align:center; font-size:22px; background:var(--bg2); border:1px solid rgba(255,255,255,0.15); color:var(--cream); padding:10px 0;"
+      oninput="onCustomChallenge()">
+    <input id="custom-text" type="text" placeholder="Beskriv utmaningen..."
+      style="flex:1; background:var(--bg2); border:1px solid rgba(255,255,255,0.15); color:var(--cream); padding:10px 14px; font-family:'DM Sans',sans-serif; font-size:15px;"
+      oninput="onCustomChallenge()">
+  </div>
   <div class="stack">
-    <button class="btn btn-yellow" onclick="randomizeChallenge()">🎲 Slumpa</button>
     <button class="btn" id="confirm-btn" onclick="confirmChallenge()" disabled>Kör det här!</button>
     <button class="btn btn-ghost" onclick="cancelSelecting()">Avbryt</button>
   </div>
@@ -692,10 +701,32 @@ async function initStartChallenge() {
   document.getElementById('sel-text').textContent  = 'Tryck slumpa';
   document.getElementById('sel-text').style.color  = 'var(--muted)';
   document.getElementById('confirm-btn').disabled  = true;
+  document.getElementById('custom-text').value  = '';
+  document.getElementById('custom-emoji').value = '';
   showScreen('screen-selecting');
 }
 
+function onCustomChallenge() {
+  const text  = document.getElementById('custom-text').value.trim();
+  const emoji = document.getElementById('custom-emoji').value.trim() || '📸';
+  if (text) {
+    pickedChallenge = { emoji, text };
+    document.getElementById('sel-emoji').textContent = emoji;
+    document.getElementById('sel-text').textContent  = text;
+    document.getElementById('sel-text').style.color  = 'var(--cream)';
+    document.getElementById('confirm-btn').disabled  = false;
+  } else {
+    pickedChallenge = null;
+    document.getElementById('sel-emoji').textContent = '🎲';
+    document.getElementById('sel-text').textContent  = 'Tryck slumpa';
+    document.getElementById('sel-text').style.color  = 'var(--muted)';
+    document.getElementById('confirm-btn').disabled  = true;
+  }
+}
+
 function randomizeChallenge() {
+  document.getElementById('custom-text').value  = '';
+  document.getElementById('custom-emoji').value = '';
   const c = CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
   pickedChallenge = c;
   document.getElementById('sel-emoji').textContent = c.emoji;
