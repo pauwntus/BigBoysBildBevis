@@ -228,61 +228,36 @@ input::placeholder { color: var(--muted); }
     <div class="accent-line"></div>
     <p class="text-muted">Det ultimata photo game för gänget</p>
   </div>
-  <div class="mt-auto">
-    <button class="btn" onclick="showScreen('screen-auth')">Logga in</button>
-  </div>
-</div>
-
-<!-- ══ AUTH – email ══════════════════════════════════ -->
-<div id="screen-auth" class="screen">
-  <button class="back-btn" onclick="showScreen('screen-home')">← Tillbaka</button>
-  <h3>Identifiering</h3>
-  <h2>Din e-post</h2>
-  <div class="accent-line"></div>
-  <p class="text-muted" style="margin-bottom:20px;">Du får en 6-siffrig kod på mejlen.</p>
-  <div class="stack">
+  <div class="stack mt-auto">
     <div>
-      <label class="label">E-postadress</label>
-      <input type="email" id="auth-email" placeholder="din@email.com" autocomplete="email" inputmode="email">
+      <label class="label">Ditt namn</label>
+      <input type="text" id="home-name" placeholder="Namn" maxlength="20" autocomplete="off"
+        onkeydown="if(event.key==='Enter') continueFromHome()">
     </div>
-    <button class="btn" id="auth-btn" onclick="sendOtp()">Skicka länk</button>
+    <button class="btn" onclick="continueFromHome()">Fortsätt →</button>
   </div>
-</div>
-
-<!-- ══ EMAIL SENT ═══════════════════════════════════════ -->
-<div id="screen-otp" class="screen">
-  <button class="back-btn" onclick="showScreen('screen-auth')">← Tillbaka</button>
-  <h3>Nästan klart</h3>
-  <h2>Kolla mejlen</h2>
-  <div class="accent-line"></div>
-  <div style="font-size:56px; text-align:center; margin:24px 0;">📬</div>
-  <p class="text-muted" id="otp-hint" style="margin-bottom:24px; text-align:center;">Vi har skickat en inloggningslänk. Klicka på länken i mejlet för att logga in.</p>
-  <button class="btn btn-ghost" onclick="sendOtp(true)">Skicka ny länk</button>
 </div>
 
 <!-- ══ PORTAL – create or join ════════════════════════ -->
 <div id="screen-portal" class="screen">
   <div style="margin-bottom:24px;">
-    <h3>Inloggad</h3>
-    <h2 id="portal-greeting">Välkommen!</h2>
+    <h3>Välkommen</h3>
+    <h2 id="portal-greeting">!</h2>
     <div class="accent-line"></div>
   </div>
   <div class="stack">
-    <div>
-      <label class="label">Ditt namn</label>
-      <input type="text" id="portal-name" placeholder="Namn" maxlength="20" autocomplete="off">
-    </div>
     <button class="btn" id="portal-create-btn" onclick="createGame()">Skapa ny lobby</button>
-    <div class="divider">— eller —</div>
+    <div class="divider">— eller gå med —</div>
     <div>
       <label class="label">Spelkod</label>
       <input type="text" id="portal-code" placeholder="1234" maxlength="4" autocomplete="off"
-        style="font-family:'Anton',sans-serif; font-size:36px; letter-spacing:10px; text-align:center;">
+        style="font-family:'Anton',sans-serif; font-size:36px; letter-spacing:10px; text-align:center;"
+        onkeydown="if(event.key==='Enter') joinGame()">
     </div>
     <button class="btn btn-yellow" id="portal-join-btn" onclick="joinGame()">Gå med i lobby</button>
   </div>
   <div class="text-center" style="margin-top:24px;">
-    <button class="logout-btn" onclick="logout()">Logga ut</button>
+    <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
 </div>
 
@@ -436,7 +411,7 @@ const CHALLENGES = [
 const COLORS = ['#FF6B35','#FFE135','#E63946','#2ed573','#a29bfe','#00d4ff','#fd79a8','#ffeaa7'];
 const EMOJIS = ['🎿','⛷️','🏔️','🥇','🦊','🐻','🦁','🐯'];
 
-let authUser      = null;
+let myUUID        = null;
 let myId          = null;
 let myName        = null;
 let gameId        = null;
@@ -446,63 +421,63 @@ let realtimeCh    = null;
 let pendingPhoto  = null;
 let pickedChallenge = null;
 let selectedVoteFor = null;
-let pendingEmail  = '';
+
+function getOrCreateUUID() {
+  let uuid = localStorage.getItem('my_uuid');
+  if (!uuid) { uuid = crypto.randomUUID(); localStorage.setItem('my_uuid', uuid); }
+  return uuid;
+}
 
 // ── Init ──────────────────────────────────────────────
 async function init() {
   const urlCode = new URLSearchParams(window.location.search).get('code');
   if (urlCode) window._pendingCode = urlCode;
 
-  // Handle Supabase hash errors (e.g. expired magic link)
-  const hashParams = new URLSearchParams(window.location.hash.slice(1));
-  if (hashParams.get('error')) {
-    const desc = hashParams.get('error_description') || hashParams.get('error');
-    toast('Länken gick ut – begär en ny: ' + decodeURIComponent(desc.replace(/\+/g, ' ')));
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
+  myUUID = getOrCreateUUID();
+  const storedName = localStorage.getItem('my_name');
 
-  // Listen for magic link redirect (same or new tab)
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && !authUser) {
-      authUser = session.user;
-      await afterAuth();
-    }
-  });
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) { authUser = session.user; await afterAuth(); return; }
-  showScreen('screen-home');
-}
-
-async function afterAuth() {
+  // Try to resume existing player session
   const storedPlayerId = localStorage.getItem('player_id');
   const storedGameId   = localStorage.getItem('game_id');
-
   if (storedPlayerId && storedGameId) {
     const { data: player } = await sb.from('players').select('*, games(*)')
-      .eq('id', storedPlayerId).eq('auth_user_id', authUser.id).maybeSingle();
+      .eq('id', storedPlayerId).maybeSingle();
     if (player?.games) {
       if (window._pendingCode && player.games.code !== window._pendingCode) {
-        showPortal(player.name); return;
+        myName = player.name;
+        showPortal(); return;
       }
       await navigateToPlayer(player); return;
     }
     clearLocalSession();
   }
 
+  // Try to find active game by UUID
   const { data: players } = await sb.from('players').select('*, games(*)')
-    .eq('auth_user_id', authUser.id).order('created_at', { ascending: false }).limit(1);
+    .eq('auth_user_id', myUUID).order('created_at', { ascending: false }).limit(1);
   const player = players?.[0];
-
   if (player?.games && !window._pendingCode) { await navigateToPlayer(player); return; }
-  showPortal(player?.name || '');
+  if (player?.name) myName = player.name;
+
+  if (storedName) {
+    myName = myName || storedName;
+    document.getElementById('home-name').value = myName;
+    showPortal(); return;
+  }
+  showScreen('screen-home');
 }
 
-function showPortal(prefillName) {
-  if (prefillName) document.getElementById('portal-name').value = prefillName;
+function continueFromHome() {
+  const name = document.getElementById('home-name').value.trim();
+  if (!name) return toast('Ange ditt namn');
+  myName = name;
+  localStorage.setItem('my_name', name);
+  showPortal();
+}
+
+function showPortal() {
   if (window._pendingCode) document.getElementById('portal-code').value = window._pendingCode;
-  const handle = authUser?.email?.split('@')[0] || '';
-  document.getElementById('portal-greeting').textContent = handle ? 'Hej, ' + handle + '!' : 'Välkommen!';
+  document.getElementById('portal-greeting').textContent = 'Hej, ' + myName + '!';
   showScreen('screen-portal');
 }
 
@@ -518,34 +493,26 @@ async function navigateToPlayer(player) {
 
 function clearLocalSession() {
   ['player_id','game_id'].forEach(k => localStorage.removeItem(k));
-  myId = myName = gameId = gameCode = null;
+  myId = gameId = gameCode = null;
 }
 
-// ── Auth ──────────────────────────────────────────────
-async function sendOtp(resend = false) {
-  const email = resend ? pendingEmail : document.getElementById('auth-email').value.trim().toLowerCase();
-  if (!email || !email.includes('@')) return toast('Ange en giltig e-postadress');
-  pendingEmail = email;
-  setLoading('auth-btn', true, 'Skickar...');
-  const { error } = await sb.auth.signInWithOtp({ email });
-  setLoading('auth-btn', false, 'Skicka länk');
-  if (error) return toast('Fel: ' + error.message);
-  document.getElementById('otp-hint').textContent = 'Länk skickad till ' + email + '. Klicka på den för att logga in.';
-  showScreen('screen-otp');
-  toast('Länken är på väg!');
+function changeName() {
+  document.getElementById('home-name').value = myName || '';
+  showScreen('screen-home');
 }
 
-async function logout() {
+function logout() {
   if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
-  clearLocalSession(); currentGame = null;
-  await sb.auth.signOut(); authUser = null;
+  clearLocalSession(); currentGame = null; myName = null;
+  localStorage.removeItem('my_name');
+  document.getElementById('home-name').value = '';
   showScreen('screen-home');
 }
 
 function leaveGame() {
   if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
   clearLocalSession(); currentGame = null;
-  showPortal(myName || '');
+  showPortal();
 }
 
 // ── Routing ───────────────────────────────────────────
@@ -597,16 +564,14 @@ function activeScreen() { return document.querySelector('.screen.active')?.id; }
 
 // ── Create ────────────────────────────────────────────
 async function createGame() {
-  const name = document.getElementById('portal-name').value.trim();
-  if (!name) return toast('Ange ditt namn');
   setLoading('portal-create-btn', true, 'Skapar...');
   const code = String(Math.floor(1000 + Math.random() * 9000));
   const { data: game, error: ge } = await sb.from('games')
     .insert({ code, phase: 'lobby', current_round: 0 }).select().single();
   if (ge) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + ge.message); }
   const { data: player, error: pe } = await sb.from('players').insert({
-    game_id: game.id, name, color: COLORS[0], emoji: EMOJIS[0],
-    score: 0, is_host: true, auth_user_id: authUser.id,
+    game_id: game.id, name: myName, color: COLORS[0], emoji: EMOJIS[0],
+    score: 0, is_host: true, auth_user_id: myUUID,
   }).select().single();
   if (pe) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + pe.message); }
   setLoading('portal-create-btn', false, 'Skapa ny lobby');
@@ -615,35 +580,33 @@ async function createGame() {
 
 // ── Join ──────────────────────────────────────────────
 async function joinGame() {
-  const name = document.getElementById('portal-name').value.trim();
   const code = document.getElementById('portal-code').value.trim();
   if (!code || code.length !== 4) return toast('Ange 4-siffrig kod');
-  if (!name) return toast('Ange ditt namn');
   setLoading('portal-join-btn', true, 'Söker...');
 
   const { data: game } = await sb.from('games').select('*').eq('code', code).single();
   if (!game) { setLoading('portal-join-btn', false, 'Gå med i lobby'); return toast('Ingen lobby med den koden'); }
 
-  // 1. Same auth user already in game?
-  const { data: byAuth } = await sb.from('players').select('*')
-    .eq('game_id', game.id).eq('auth_user_id', authUser.id).maybeSingle();
-  // 2. Same name without auth?
-  const { data: byName } = byAuth ? { data: null } :
-    await sb.from('players').select('*').eq('game_id', game.id).eq('name', name).maybeSingle();
+  // 1. Same UUID already in game → reconnect
+  const { data: byUUID } = await sb.from('players').select('*')
+    .eq('game_id', game.id).eq('auth_user_id', myUUID).maybeSingle();
+  // 2. Same name in game → claim it (e.g. new device)
+  const { data: byName } = byUUID ? { data: null } :
+    await sb.from('players').select('*').eq('game_id', game.id).eq('name', myName).maybeSingle();
 
   let player;
-  if (byAuth) {
-    player = byAuth; toast('Välkommen tillbaka, ' + byAuth.name + '!');
+  if (byUUID) {
+    player = byUUID; toast('Välkommen tillbaka, ' + byUUID.name + '!');
   } else if (byName) {
-    await sb.from('players').update({ auth_user_id: authUser.id }).eq('id', byName.id);
-    player = { ...byName, auth_user_id: authUser.id };
+    await sb.from('players').update({ auth_user_id: myUUID }).eq('id', byName.id);
+    player = { ...byName, auth_user_id: myUUID };
     toast('Välkommen tillbaka, ' + byName.name + '!');
   } else {
     const { data: all } = await sb.from('players').select('id').eq('game_id', game.id);
     const idx = (all?.length || 0) % 8;
     const { data: np, error } = await sb.from('players').insert({
-      game_id: game.id, name, color: COLORS[idx], emoji: EMOJIS[idx],
-      score: 0, is_host: false, auth_user_id: authUser.id,
+      game_id: game.id, name: myName, color: COLORS[idx], emoji: EMOJIS[idx],
+      score: 0, is_host: false, auth_user_id: myUUID,
     }).select().single();
     if (error) { setLoading('portal-join-btn', false, 'Gå med i lobby'); return toast('Fel: ' + error.message); }
     player = np;
