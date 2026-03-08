@@ -9,14 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0D1B2A;
-  --bg2: #111F30;
+  --bg:     #0D1B2A;
+  --bg2:    #111F30;
   --orange: #FF6B35;
   --yellow: #FFE135;
-  --red: #E63946;
-  --cream: #F5F0E8;
-  --muted: #8A9BB0;
-  --gold: #FFD700;
+  --red:    #E63946;
+  --cream:  #F5F0E8;
+  --muted:  #8A9BB0;
+  --gold:   #FFD700;
   --silver: #C0C0C0;
   --bronze: #CD7F32;
 }
@@ -30,426 +30,175 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-
-/* Diagonal stripes */
 body::before {
   content: '';
-  position: fixed;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 40px,
-    rgba(255,255,255,0.012) 40px,
-    rgba(255,255,255,0.012) 80px
-  );
-  pointer-events: none;
-  z-index: 0;
+  position: fixed; inset: 0;
+  background-image: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 80px);
+  pointer-events: none; z-index: 0;
 }
-
-/* Grain texture */
 body::after {
   content: '';
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   background-size: 200px 200px;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.4;
+  pointer-events: none; z-index: 0; opacity: 0.4;
 }
 
 .screen {
   display: none;
   min-height: 100vh;
-  padding: 32px 20px 100px;
-  position: relative;
-  z-index: 1;
-  max-width: 480px;
-  margin: 0 auto;
+  padding: 32px 20px 48px;
+  position: relative; z-index: 1;
+  max-width: 480px; margin: 0 auto;
   flex-direction: column;
 }
-.screen.active { display: flex; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.screen.active { animation: fadeIn 0.2s ease; }
+.screen.active { display: flex; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── Typography ── */
-.title-huge {
-  font-family: 'Anton', sans-serif;
-  font-size: 72px;
-  line-height: 0.9;
-  color: var(--cream);
-}
-.title-sub {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: var(--orange);
-}
-h2 {
-  font-family: 'Anton', sans-serif;
-  font-size: 32px;
-  color: var(--cream);
-}
-h3 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--muted);
-}
-.accent-line {
-  height: 3px;
-  background: linear-gradient(90deg, var(--orange), var(--yellow), var(--red));
-  margin: 10px 0 18px;
-}
+.title-huge { font-family: 'Anton', sans-serif; font-size: 72px; line-height: 0.9; color: var(--cream); }
+.title-sub  { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 18px; text-transform: uppercase; letter-spacing: 3px; color: var(--orange); }
+h2 { font-family: 'Anton', sans-serif; font-size: 30px; color: var(--cream); }
+h3 { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+.accent-line { height: 3px; background: linear-gradient(90deg, var(--orange), var(--yellow), var(--red)); margin: 10px 0 18px; }
 
 /* ── Buttons ── */
 .btn {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  border: none;
-  padding: 16px 24px;
-  cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900;
+  font-size: 18px; text-transform: uppercase; letter-spacing: 2px;
+  border: none; padding: 16px 24px; cursor: pointer;
   clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
   transition: opacity 0.15s, transform 0.1s;
-  width: 100%;
-  display: block;
-  color: var(--bg);
-  background: var(--orange);
+  width: 100%; display: block; color: var(--bg); background: var(--orange);
 }
 .btn:active { transform: scale(0.97); opacity: 0.9; }
 .btn-yellow { background: var(--yellow); }
-.btn-ghost {
-  background: transparent;
-  border: 2px solid rgba(255,255,255,0.15);
-  color: var(--muted);
-  clip-path: none;
-}
-.btn-sm {
-  font-size: 14px;
-  padding: 10px 16px;
-  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
-}
+.btn-ghost  { background: transparent; border: 2px solid rgba(255,255,255,0.15); color: var(--muted); clip-path: none; }
+.btn-sm     { font-size: 14px; padding: 10px 16px; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
 .btn-inline { width: auto; display: inline-block; }
 .btn:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Inputs ── */
-input[type="text"] {
+input[type="text"], input[type="email"] {
   width: 100%;
-  background: var(--bg2);
-  border: 2px solid rgba(255,255,255,0.08);
-  color: var(--cream);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  padding: 14px 16px;
-  outline: none;
-  border-radius: 0;
-  -webkit-appearance: none;
+  background: var(--bg2); border: 2px solid rgba(255,255,255,0.08);
+  color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 16px;
+  padding: 14px 16px; outline: none; border-radius: 0; -webkit-appearance: none;
   transition: border-color 0.15s;
 }
 input:focus { border-color: var(--orange); }
 input::placeholder { color: var(--muted); }
-
-.label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--muted);
-  display: block;
-  margin-bottom: 6px;
-}
+.input-otp { font-family: 'Anton', sans-serif; font-size: 40px; letter-spacing: 12px; text-align: center; }
+.label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); display: block; margin-bottom: 6px; }
 
 /* ── Cards / layout ── */
-.card {
-  background: var(--bg2);
-  border: 1px solid rgba(255,255,255,0.06);
-  padding: 20px;
-}
-.stack   > * + * { margin-top: 12px; }
+.card { background: var(--bg2); border: 1px solid rgba(255,255,255,0.06); padding: 20px; }
+.stack    > * + * { margin-top: 12px; }
 .stack-sm > * + * { margin-top: 8px; }
+.divider  { text-align: center; color: var(--muted); font-size: 13px; padding: 4px 0; }
 
-.badge {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 3px 8px;
-  border: 1px solid;
-  display: inline-block;
-}
+/* ── Badge ── */
+.badge { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 3px 8px; border: 1px solid; display: inline-block; }
 .badge-orange { border-color: var(--orange); color: var(--orange); }
 
+/* ── Screen header ── */
+.screen-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.gallery-icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--cream); font-size: 13px; padding: 8px 12px; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
+.game-code-big { font-family: 'Anton', sans-serif; font-size: 44px; letter-spacing: 8px; color: var(--yellow); line-height: 1; }
+.share-btn { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 2px 0; text-decoration: underline; }
+
 /* ── Player chip ── */
-.player-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255,255,255,0.03);
-  border-left: 3px solid;
-}
+.player-chip { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-left: 3px solid; }
 .chip-emoji { font-size: 20px; }
 .chip-name  { flex: 1; font-weight: 600; font-size: 15px; }
-.chip-score {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 16px;
-  color: var(--yellow);
-}
-
-/* ── Game code ── */
-.game-code {
-  font-family: 'Anton', sans-serif;
-  font-size: 52px;
-  letter-spacing: 10px;
-  color: var(--yellow);
-}
+.chip-score { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 16px; color: var(--yellow); }
+.remove-btn { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
 
 /* ── Challenge card ── */
-.challenge-card {
-  background: var(--bg2);
-  border-top: 3px solid transparent;
-  border-image: linear-gradient(90deg, var(--orange), var(--yellow)) 1;
-  padding: 28px 20px;
-  text-align: center;
-  transition: transform 0.15s;
-}
+.challenge-card { background: var(--bg2); border-top: 3px solid transparent; border-image: linear-gradient(90deg, var(--orange), var(--yellow)) 1; padding: 28px 20px; text-align: center; transition: transform 0.15s; }
 .challenge-emoji { font-size: 52px; line-height: 1; margin-bottom: 12px; }
-.challenge-text {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: 22px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  line-height: 1.2;
-  color: var(--cream);
-}
+.challenge-text  { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; color: var(--cream); }
 
 /* ── Upload zone ── */
-.upload-zone {
-  border: 2px dashed rgba(255,255,255,0.18);
-  padding: 48px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
+.upload-zone { border: 2px dashed rgba(255,255,255,0.18); padding: 48px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
 .upload-zone:active { background: rgba(255,107,53,0.05); border-color: var(--orange); }
 .upload-icon { font-size: 44px; margin-bottom: 10px; }
 
-/* ── Progress bar ── */
-.progress-bar { height: 4px; background: rgba(255,255,255,0.08); }
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--orange), var(--yellow));
-  transition: width 0.4s ease;
-}
+/* ── Progress ── */
+.progress-bar  { height: 4px; background: rgba(255,255,255,0.08); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--yellow)); transition: width 0.4s ease; }
 
 /* ── Voting grid ── */
-.photo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.photo-item {
-  position: relative;
-  cursor: pointer;
-  border: 3px solid transparent;
-  transition: border-color 0.15s;
-}
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.photo-item { position: relative; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; }
 .photo-item.selected { border-color: var(--orange); }
 .photo-item.mine { opacity: 0.55; cursor: default; }
 .photo-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-.vote-check {
-  position: absolute; top: 6px; right: 6px;
-  width: 26px; height: 26px;
-  background: var(--orange);
-  display: none; align-items: center; justify-content: center;
-  font-size: 14px; color: white;
-}
+.vote-check { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; background: var(--orange); display: none; align-items: center; justify-content: center; font-size: 14px; color: white; }
 .photo-item.selected .vote-check { display: flex; }
-.photo-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic; font-weight: 900;
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-  padding: 4px 6px;
-  background: rgba(0,0,0,0.65);
-  position: absolute; bottom: 0; left: 0; right: 0;
-  color: var(--cream);
-}
+.photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 0; left: 0; right: 0; color: var(--cream); }
 
 /* ── Results ── */
-.result-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-left: 4px solid rgba(255,255,255,0.1);
-}
-.result-rank { font-family: 'Anton', sans-serif; font-size: 26px; width: 32px; text-align: center; }
+.result-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-left: 4px solid rgba(255,255,255,0.1); }
+.result-rank  { font-family: 'Anton', sans-serif; font-size: 26px; width: 32px; text-align: center; }
 .result-photo { width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; }
-.result-name { flex: 1; font-weight: 600; font-size: 14px; }
-.result-pts {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic; font-weight: 900; font-size: 18px;
-  color: var(--yellow);
-}
+.result-name  { flex: 1; font-weight: 600; font-size: 14px; }
+.result-pts   { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 18px; color: var(--yellow); }
 
-/* ── Mountain silhouette ── */
-.mountain-bg {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  pointer-events: none; z-index: 0; opacity: 0.05;
-}
-
-/* ── Gallery FAB ── */
-#gallery-fab {
-  position: fixed; bottom: 24px; right: 20px; z-index: 100;
-  background: var(--bg2);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: var(--cream);
-  padding: 11px 16px;
-  cursor: pointer;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic; font-weight: 900;
-  font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
-  display: none; align-items: center; gap: 6px;
-}
-#gallery-fab.visible { display: flex; }
+/* ── Mountain ── */
+.mountain-bg { position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 0; opacity: 0.05; }
 
 /* ── Gallery overlay ── */
-#gallery-overlay {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  z-index: 200;
-  display: none; flex-direction: column;
-}
+#gallery-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: none; flex-direction: column; }
 #gallery-overlay.open { display: flex; }
-.gallery-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  display: flex; align-items: center; gap: 14px;
-  flex-shrink: 0;
-}
-.gallery-close {
-  background: none; border: none; color: var(--muted);
-  font-size: 22px; cursor: pointer; padding: 4px; line-height: 1;
-}
+.gallery-hdr { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.gallery-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 4px; line-height: 1; }
 .gallery-body { flex: 1; overflow-y: auto; padding: 16px; }
 .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .gallery-item { position: relative; }
 .gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-.gallery-item-meta {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.75));
-  padding: 20px 8px 6px;
-  font-size: 11px; color: var(--cream);
-  display: flex; justify-content: space-between;
-}
+.gallery-meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.75)); padding: 20px 8px 6px; font-size: 11px; color: var(--cream); display: flex; justify-content: space-between; }
 
-/* ── Selecting overlay (non-starters) ── */
-#selecting-overlay {
-  position: fixed; inset: 0;
-  background: rgba(13,27,42,0.92);
-  z-index: 150;
-  display: none;
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; text-align: center; padding: 40px;
-}
+/* ── Selecting overlay ── */
+#selecting-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.92); z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 40px; }
 #selecting-overlay.open { display: flex; }
 
 /* ── Spinner ── */
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid rgba(255,255,255,0.1);
-  border-top-color: var(--orange);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
+.spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Toast ── */
-#toast {
-  position: fixed; bottom: 80px; left: 50%;
-  transform: translateX(-50%) translateY(16px);
-  background: var(--orange); color: var(--bg);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic; font-weight: 900;
-  font-size: 14px; text-transform: uppercase; letter-spacing: 1px;
-  padding: 10px 20px; z-index: 400;
-  opacity: 0; transition: opacity 0.2s, transform 0.2s;
-  pointer-events: none; white-space: nowrap;
-}
+#toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--orange); color: var(--bg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 20px; z-index: 400; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── Back button ── */
-.back-btn {
-  background: none; border: none; color: var(--muted);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-style: italic; font-weight: 900;
-  font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
-  cursor: pointer; display: flex; align-items: center; gap: 6px;
-  padding: 0; margin-bottom: 24px;
-}
+/* ── Nav ── */
+.back-btn { background: none; border: none; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0; margin-bottom: 24px; }
+.logout-btn { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; }
 
 /* ── Waiting dots ── */
-@keyframes dots {
-  0%,20%  { content: '.'; }
-  40%     { content: '..'; }
-  60%,100% { content: '...'; }
-}
+@keyframes dots { 0%,20%{ content:'.'; } 40%{ content:'..'; } 60%,100%{ content:'...'; } }
 .waiting-dots::after { content: ''; animation: dots 1.4s infinite; }
 
-/* ── Utility ── */
+/* ── Util ── */
 .text-muted   { color: var(--muted); font-size: 14px; }
 .text-center  { text-align: center; }
 .mt-auto      { margin-top: auto; }
-.flex         { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.grow         { flex: 1; }
 #file-input, #bonus-file-input { display: none; }
 </style>
 </head>
 <body>
 
-<!-- Mountain silhouette -->
 <svg class="mountain-bg" viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax meet">
   <path d="M0,300 L0,200 L160,90 L300,160 L460,55 L600,130 L740,35 L880,110 L1040,45 L1190,100 L1340,25 L1440,80 L1440,300 Z" fill="var(--cream)"/>
 </svg>
 
 <div id="toast"></div>
 
-<!-- Gallery FAB -->
-<button id="gallery-fab" onclick="openGallery()">📷 Galleri</button>
-
 <!-- Gallery overlay -->
 <div id="gallery-overlay">
-  <div class="gallery-header">
+  <div class="gallery-hdr">
     <button class="gallery-close" onclick="closeGallery()">✕</button>
-    <div style="flex:1;">
-      <h3>Bildbank</h3>
-      <h2 style="font-size:26px;">Galleri</h2>
-    </div>
+    <div style="flex:1;"><h3>Bildbank</h3><h2 style="font-size:26px;">Galleri</h2></div>
     <button class="btn btn-sm btn-yellow btn-inline" onclick="document.getElementById('bonus-file-input').click()">+ Bild</button>
   </div>
   <div class="gallery-body">
@@ -468,10 +217,10 @@ input::placeholder { color: var(--muted); }
   <p class="text-muted">väljer utmaning<span class="waiting-dots"></span></p>
 </div>
 
-<input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)">
+<input type="file" id="file-input"       accept="image/*" onchange="handleFileUpload(event)">
 <input type="file" id="bonus-file-input" accept="image/*" onchange="uploadBonusPhoto(event)">
 
-<!-- ══════════════════════════════════════════ HOME -->
+<!-- ══ HOME ══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
   <div style="margin-top:48px; margin-bottom:32px;">
     <div class="title-sub">Välkommen till</div>
@@ -479,68 +228,97 @@ input::placeholder { color: var(--muted); }
     <div class="accent-line"></div>
     <p class="text-muted">Det ultimata photo game för gänget</p>
   </div>
-  <div class="stack mt-auto">
-    <button class="btn" onclick="showScreen('screen-create')">Skapa lobby</button>
-    <button class="btn btn-yellow" onclick="showScreen('screen-join')">Gå med i lobby</button>
+  <div class="mt-auto">
+    <button class="btn" onclick="showScreen('screen-auth')">Logga in</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ CREATE -->
-<div id="screen-create" class="screen">
+<!-- ══ AUTH – email ══════════════════════════════════ -->
+<div id="screen-auth" class="screen">
   <button class="back-btn" onclick="showScreen('screen-home')">← Tillbaka</button>
-  <h3>Ny lobby</h3>
-  <h2>Skapa spel</h2>
+  <h3>Identifiering</h3>
+  <h2>Din e-post</h2>
   <div class="accent-line"></div>
-  <div class="stack" style="margin-top:4px;">
+  <p class="text-muted" style="margin-bottom:20px;">Du får en 6-siffrig kod på mejlen.</p>
+  <div class="stack">
+    <div>
+      <label class="label">E-postadress</label>
+      <input type="email" id="auth-email" placeholder="din@email.com" autocomplete="email" inputmode="email">
+    </div>
+    <button class="btn" id="auth-btn" onclick="sendOtp()">Skicka kod</button>
+  </div>
+</div>
+
+<!-- ══ OTP ════════════════════════════════════════════ -->
+<div id="screen-otp" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-auth')">← Tillbaka</button>
+  <h3>Verifiera</h3>
+  <h2>Ange koden</h2>
+  <div class="accent-line"></div>
+  <p class="text-muted" id="otp-hint" style="margin-bottom:20px;">Koden skickades till din e-post.</p>
+  <div class="stack">
+    <div>
+      <label class="label">6-siffrig kod</label>
+      <input type="text" id="otp-code" class="input-otp" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+    </div>
+    <button class="btn" id="otp-btn" onclick="verifyOtp()">Verifiera</button>
+    <button class="btn btn-ghost" onclick="sendOtp(true)">Skicka ny kod</button>
+  </div>
+</div>
+
+<!-- ══ PORTAL – create or join ════════════════════════ -->
+<div id="screen-portal" class="screen">
+  <div style="margin-bottom:24px;">
+    <h3>Inloggad</h3>
+    <h2 id="portal-greeting">Välkommen!</h2>
+    <div class="accent-line"></div>
+  </div>
+  <div class="stack">
     <div>
       <label class="label">Ditt namn</label>
-      <input type="text" id="create-name" placeholder="Namn" maxlength="20" autocomplete="off">
+      <input type="text" id="portal-name" placeholder="Namn" maxlength="20" autocomplete="off">
     </div>
-    <button class="btn" id="create-btn" onclick="createGame()">Skapa</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════ JOIN -->
-<div id="screen-join" class="screen">
-  <button class="back-btn" onclick="showScreen('screen-home')">← Tillbaka</button>
-  <h3>Gå med</h3>
-  <h2>Ange kod</h2>
-  <div class="accent-line"></div>
-  <div class="stack" style="margin-top:4px;">
+    <button class="btn" id="portal-create-btn" onclick="createGame()">Skapa ny lobby</button>
+    <div class="divider">— eller —</div>
     <div>
       <label class="label">Spelkod</label>
-      <input type="text" id="join-code" placeholder="1234" maxlength="4" autocomplete="off"
+      <input type="text" id="portal-code" placeholder="1234" maxlength="4" autocomplete="off"
         style="font-family:'Anton',sans-serif; font-size:36px; letter-spacing:10px; text-align:center;">
     </div>
-    <div>
-      <label class="label">Ditt namn</label>
-      <input type="text" id="join-name" placeholder="Namn" maxlength="20" autocomplete="off">
-    </div>
-    <button class="btn" id="join-btn" onclick="joinGame()">Gå med</button>
+    <button class="btn btn-yellow" id="portal-join-btn" onclick="joinGame()">Gå med i lobby</button>
+  </div>
+  <div class="text-center" style="margin-top:24px;">
+    <button class="logout-btn" onclick="logout()">Logga ut</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ LOBBY -->
+<!-- ══ LOBBY ══════════════════════════════════════════ -->
 <div id="screen-lobby" class="screen">
-  <div class="flex items-center justify-between" style="margin-bottom:12px;">
+  <div class="screen-hdr">
     <div>
       <h3>Lobby</h3>
-      <div class="game-code" id="lobby-code">----</div>
+      <div class="game-code-big" id="lobby-code">----</div>
+      <button class="share-btn" onclick="shareLink()">Dela länk</button>
     </div>
-    <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--muted);">Logga ut</button>
+    <button class="gallery-icon-btn" onclick="openGallery()">📷 Galleri</button>
   </div>
   <div class="accent-line"></div>
   <h3 style="margin-bottom:10px;">Spelare</h3>
   <div id="lobby-players" class="stack-sm"></div>
-  <div class="mt-auto" style="padding-top:24px;">
+  <div style="padding-top:24px; margin-top:auto;">
     <button class="btn" onclick="initStartChallenge()">Starta utmaning</button>
+    <div class="text-center" style="margin-top:16px;">
+      <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
+    </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ SELECTING (starter only) -->
+<!-- ══ SELECTING ══════════════════════════════════════ -->
 <div id="screen-selecting" class="screen">
-  <h3>Du väljer</h3>
-  <h2>Välj utmaning</h2>
+  <div class="screen-hdr">
+    <div><h3>Du väljer</h3><h2>Välj utmaning</h2></div>
+    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
+  </div>
   <div class="accent-line"></div>
   <div id="selecting-card" class="challenge-card" style="margin:20px 0 24px;">
     <div class="challenge-emoji" id="sel-emoji">🎲</div>
@@ -553,24 +331,20 @@ input::placeholder { color: var(--muted); }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ ACTIVE -->
+<!-- ══ ACTIVE ═════════════════════════════════════════ -->
 <div id="screen-active" class="screen">
-  <div class="flex items-center justify-between" style="margin-bottom:14px;">
-    <h3>Pågående utmaning</h3>
-    <span class="badge badge-orange" id="active-round">RND 1</span>
+  <div class="screen-hdr">
+    <div><h3>Pågående utmaning</h3><span class="badge badge-orange" id="active-round">RND 1</span></div>
+    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="challenge-card" style="margin-bottom:20px;">
     <div class="challenge-emoji" id="active-emoji">📸</div>
     <div class="challenge-text" id="active-text">–</div>
   </div>
-
-  <!-- No photo yet -->
   <div id="zone-upload" class="upload-zone" onclick="document.getElementById('file-input').click()">
     <div class="upload-icon">📷</div>
     <p class="text-muted" style="font-size:14px;">Tryck för att ta / välja foto</p>
   </div>
-
-  <!-- Photo selected, not yet submitted -->
   <div id="zone-preview" style="display:none;">
     <img id="preview-img" src="" alt="" style="width:100%; max-height:340px; object-fit:cover; display:block; margin-bottom:10px;">
     <div class="stack">
@@ -578,8 +352,6 @@ input::placeholder { color: var(--muted); }
       <button class="btn btn-ghost btn-sm" onclick="resetPreview()">Välj annan</button>
     </div>
   </div>
-
-  <!-- Submitted, waiting for others -->
   <div id="zone-submitted" style="display:none;">
     <img id="submitted-img" src="" alt="" style="width:100%; max-height:300px; object-fit:cover; display:block; margin-bottom:10px;">
     <button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="changePhoto()">Byt foto</button>
@@ -591,10 +363,12 @@ input::placeholder { color: var(--muted); }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ VOTING -->
+<!-- ══ VOTING ═════════════════════════════════════════ -->
 <div id="screen-voting" class="screen">
-  <h3>Röstning</h3>
-  <h2>Vilken är bäst?</h2>
+  <div class="screen-hdr">
+    <div><h3>Röstning</h3><h2>Vilken är bäst?</h2></div>
+    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
+  </div>
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
   <div id="vote-action">
@@ -607,10 +381,12 @@ input::placeholder { color: var(--muted); }
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ RESULTS -->
+<!-- ══ RESULTS ════════════════════════════════════════ -->
 <div id="screen-results" class="screen">
-  <h3>Resultat</h3>
-  <h2 id="results-title" style="line-height:1.1;">Utmaning</h2>
+  <div class="screen-hdr">
+    <div><h3>Resultat</h3><h2 id="results-title" style="line-height:1.1;">Utmaning</h2></div>
+    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
+  </div>
   <div class="accent-line"></div>
   <div id="results-list" class="stack-sm" style="margin-bottom:20px;"></div>
   <div class="card" style="margin-bottom:20px;">
@@ -621,13 +397,11 @@ input::placeholder { color: var(--muted); }
 </div>
 
 <script>
-// ── Supabase ──────────────────────────────────────────────────
 const SUPABASE_URL = 'https://qfopolrxfnilhxzknmkl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_G1axvniFKDW0xQt94bhLYQ_CImljqte';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Challenges ────────────────────────────────────────────────
 const CHALLENGES = [
   { emoji: '🏔️', text: 'Fota den vackraste vyn' },
   { emoji: '🍽️', text: 'Bästa matbilden' },
@@ -659,60 +433,115 @@ const CHALLENGES = [
 const COLORS = ['#FF6B35','#FFE135','#E63946','#2ed573','#a29bfe','#00d4ff','#fd79a8','#ffeaa7'];
 const EMOJIS = ['🎿','⛷️','🏔️','🥇','🦊','🐻','🦁','🐯'];
 
-// ── State ─────────────────────────────────────────────────────
-let myId      = localStorage.getItem('player_id');
-let myName    = localStorage.getItem('player_name');
-let gameId    = localStorage.getItem('game_id');
-let gameCode  = localStorage.getItem('game_code');
+let authUser      = null;
+let myId          = null;
+let myName        = null;
+let gameId        = null;
+let gameCode      = null;
 let currentGame   = null;
 let realtimeCh    = null;
-let pendingPhoto  = null;    // base64 selected but not yet submitted
-let pickedChallenge = null;  // { emoji, text } during selecting phase
+let pendingPhoto  = null;
+let pickedChallenge = null;
 let selectedVoteFor = null;
-let hasVoted    = false;
+let pendingEmail  = '';
 
-// ── Init ──────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────
 async function init() {
-  if (myId && gameId) {
-    const [{ data: player }, { data: game }] = await Promise.all([
-      sb.from('players').select('*').eq('id', myId).single(),
-      sb.from('games').select('*').eq('id', gameId).single(),
-    ]);
-    if (player && game) {
-      myName      = player.name;
-      currentGame = game;
-      saveSession(myId, myName, gameId, gameCode);
-      await subscribeToGame();
-      await renderByPhase(game);
-      return;
-    }
-    clearSession();
-  }
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+  if (urlCode) window._pendingCode = urlCode;
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { authUser = session.user; await afterAuth(); return; }
   showScreen('screen-home');
 }
 
-function saveSession(pid, pname, gid, gcode) {
-  myId = pid; myName = pname; gameId = gid; gameCode = gcode;
-  localStorage.setItem('player_id',   pid);
-  localStorage.setItem('player_name', pname);
-  localStorage.setItem('game_id',     gid);
-  localStorage.setItem('game_code',   gcode);
+async function afterAuth() {
+  const storedPlayerId = localStorage.getItem('player_id');
+  const storedGameId   = localStorage.getItem('game_id');
+
+  if (storedPlayerId && storedGameId) {
+    const { data: player } = await sb.from('players').select('*, games(*)')
+      .eq('id', storedPlayerId).eq('auth_user_id', authUser.id).maybeSingle();
+    if (player?.games) {
+      if (window._pendingCode && player.games.code !== window._pendingCode) {
+        showPortal(player.name); return;
+      }
+      await navigateToPlayer(player); return;
+    }
+    clearLocalSession();
+  }
+
+  const { data: players } = await sb.from('players').select('*, games(*)')
+    .eq('auth_user_id', authUser.id).order('created_at', { ascending: false }).limit(1);
+  const player = players?.[0];
+
+  if (player?.games && !window._pendingCode) { await navigateToPlayer(player); return; }
+  showPortal(player?.name || '');
 }
 
-function clearSession() {
-  ['player_id','player_name','game_id','game_code'].forEach(k => localStorage.removeItem(k));
+function showPortal(prefillName) {
+  if (prefillName) document.getElementById('portal-name').value = prefillName;
+  if (window._pendingCode) document.getElementById('portal-code').value = window._pendingCode;
+  const handle = authUser?.email?.split('@')[0] || '';
+  document.getElementById('portal-greeting').textContent = handle ? 'Hej, ' + handle + '!' : 'Välkommen!';
+  showScreen('screen-portal');
+}
+
+async function navigateToPlayer(player) {
+  myId = player.id; myName = player.name;
+  gameId = player.game_id; gameCode = player.games.code;
+  currentGame = player.games;
+  localStorage.setItem('player_id', myId);
+  localStorage.setItem('game_id',   gameId);
+  await subscribeToGame();
+  await renderByPhase(player.games);
+}
+
+function clearLocalSession() {
+  ['player_id','game_id'].forEach(k => localStorage.removeItem(k));
   myId = myName = gameId = gameCode = null;
 }
 
-function logout() {
+// ── Auth ──────────────────────────────────────────────
+async function sendOtp(resend = false) {
+  const email = resend ? pendingEmail : document.getElementById('auth-email').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) return toast('Ange en giltig e-postadress');
+  pendingEmail = email;
+  setLoading('auth-btn', true, 'Skickar...');
+  const { error } = await sb.auth.signInWithOtp({ email });
+  setLoading('auth-btn', false, 'Skicka kod');
+  if (error) return toast('Fel: ' + error.message);
+  document.getElementById('otp-hint').textContent = 'Kod skickad till ' + email;
+  document.getElementById('otp-code').value = '';
+  showScreen('screen-otp');
+  toast('Koden är på väg!');
+}
+
+async function verifyOtp() {
+  const token = document.getElementById('otp-code').value.trim();
+  if (token.length !== 6) return toast('Ange den 6-siffriga koden');
+  setLoading('otp-btn', true, 'Verifierar...');
+  const { data, error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: 'email' });
+  setLoading('otp-btn', false, 'Verifiera');
+  if (error) return toast('Fel kod – försök igen');
+  authUser = data.user;
+  await afterAuth();
+}
+
+async function logout() {
   if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
-  clearSession();
-  currentGame = null;
-  document.getElementById('gallery-fab').classList.remove('visible');
+  clearLocalSession(); currentGame = null;
+  await sb.auth.signOut(); authUser = null;
   showScreen('screen-home');
 }
 
-// ── Screen routing ────────────────────────────────────────────
+function leaveGame() {
+  if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
+  clearLocalSession(); currentGame = null;
+  showPortal(myName || '');
+}
+
+// ── Routing ───────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -721,149 +550,145 @@ function showScreen(id) {
 async function renderByPhase(game) {
   currentGame = game;
   document.getElementById('selecting-overlay').classList.remove('open');
-  document.getElementById('gallery-fab').classList.add('visible');
 
   if (game.phase === 'lobby') {
-    showScreen('screen-lobby');
-    await renderLobby();
-
+    showScreen('screen-lobby'); await renderLobby();
   } else if (game.phase === 'selecting') {
     if (game.challenge_started_by === myId) {
       showScreen('screen-selecting');
     } else {
-      showScreen('screen-lobby');
-      await renderLobby();
+      showScreen('screen-lobby'); await renderLobby();
       const { data: starter } = await sb.from('players').select('name').eq('id', game.challenge_started_by).single();
       document.getElementById('selecting-who').textContent = starter?.name || '?';
       document.getElementById('selecting-overlay').classList.add('open');
     }
-
   } else if (game.phase === 'active') {
-    showScreen('screen-active');
-    await renderActive(game);
-
+    showScreen('screen-active'); await renderActive(game);
   } else if (game.phase === 'voting') {
-    showScreen('screen-voting');
-    await renderVoting(game);
-
+    showScreen('screen-voting'); await renderVoting(game);
   } else if (game.phase === 'results') {
-    showScreen('screen-results');
-    await renderResults(game);
+    showScreen('screen-results'); await renderResults(game);
   }
 }
 
-// ── Realtime ──────────────────────────────────────────────────
+// ── Realtime ──────────────────────────────────────────
 async function subscribeToGame() {
   if (realtimeCh) sb.removeChannel(realtimeCh);
   realtimeCh = sb.channel('game:' + gameId)
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'games', filter: `id=eq.${gameId}`
-    }, async p => { currentGame = p.new; await renderByPhase(p.new); })
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}`
-    }, async () => { if (activeScreen() === 'screen-lobby') await renderLobby(); })
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'submissions', filter: `game_id=eq.${gameId}`
-    }, async () => { if (activeScreen() === 'screen-active') await refreshSubProgress(); })
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'votes', filter: `game_id=eq.${gameId}`
-    }, async () => { if (activeScreen() === 'screen-voting') await refreshVoteProgress(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
+      async p => { currentGame = p.new; await renderByPhase(p.new); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
+      async () => { if (activeScreen() === 'screen-lobby') await renderLobby(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions', filter: `game_id=eq.${gameId}` },
+      async () => { if (activeScreen() === 'screen-active') await refreshSubProgress(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes', filter: `game_id=eq.${gameId}` },
+      async () => { if (activeScreen() === 'screen-voting') await refreshVoteProgress(); })
     .subscribe();
 }
 
 function activeScreen() { return document.querySelector('.screen.active')?.id; }
 
-// ── Create game ───────────────────────────────────────────────
+// ── Create ────────────────────────────────────────────
 async function createGame() {
-  const name = document.getElementById('create-name').value.trim();
+  const name = document.getElementById('portal-name').value.trim();
   if (!name) return toast('Ange ditt namn');
-  setLoading('create-btn', true, 'Skapar...');
+  setLoading('portal-create-btn', true, 'Skapar...');
   const code = String(Math.floor(1000 + Math.random() * 9000));
-
   const { data: game, error: ge } = await sb.from('games')
     .insert({ code, phase: 'lobby', current_round: 0 }).select().single();
-  if (ge) { setLoading('create-btn', false, 'Skapa'); return toast('Fel: ' + ge.message); }
-
+  if (ge) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + ge.message); }
   const { data: player, error: pe } = await sb.from('players').insert({
-    game_id: game.id, name, color: COLORS[0], emoji: EMOJIS[0], score: 0, is_host: true,
+    game_id: game.id, name, color: COLORS[0], emoji: EMOJIS[0],
+    score: 0, is_host: true, auth_user_id: authUser.id,
   }).select().single();
-  if (pe) { setLoading('create-btn', false, 'Skapa'); return toast('Fel: ' + pe.message); }
-
-  saveSession(player.id, name, game.id, code);
-  currentGame = game;
-  await subscribeToGame();
-  setLoading('create-btn', false, 'Skapa');
-  showScreen('screen-lobby');
-  await renderLobby();
-  document.getElementById('gallery-fab').classList.add('visible');
+  if (pe) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + pe.message); }
+  setLoading('portal-create-btn', false, 'Skapa ny lobby');
+  await navigateToPlayer({ ...player, games: game });
 }
 
-// ── Join game ─────────────────────────────────────────────────
+// ── Join ──────────────────────────────────────────────
 async function joinGame() {
-  const code = document.getElementById('join-code').value.trim();
-  const name = document.getElementById('join-name').value.trim();
+  const name = document.getElementById('portal-name').value.trim();
+  const code = document.getElementById('portal-code').value.trim();
   if (!code || code.length !== 4) return toast('Ange 4-siffrig kod');
   if (!name) return toast('Ange ditt namn');
-  setLoading('join-btn', true, 'Söker...');
+  setLoading('portal-join-btn', true, 'Söker...');
 
   const { data: game } = await sb.from('games').select('*').eq('code', code).single();
-  if (!game) { setLoading('join-btn', false, 'Gå med'); return toast('Ingen lobby med den koden'); }
+  if (!game) { setLoading('portal-join-btn', false, 'Gå med i lobby'); return toast('Ingen lobby med den koden'); }
 
-  // Re-join by name if player already exists
-  const { data: existing } = await sb.from('players').select('*')
-    .eq('game_id', game.id).eq('name', name).maybeSingle();
+  // 1. Same auth user already in game?
+  const { data: byAuth } = await sb.from('players').select('*')
+    .eq('game_id', game.id).eq('auth_user_id', authUser.id).maybeSingle();
+  // 2. Same name without auth?
+  const { data: byName } = byAuth ? { data: null } :
+    await sb.from('players').select('*').eq('game_id', game.id).eq('name', name).maybeSingle();
 
   let player;
-  if (existing) {
-    player = existing;
-    toast('Välkommen tillbaka, ' + name + '!');
+  if (byAuth) {
+    player = byAuth; toast('Välkommen tillbaka, ' + byAuth.name + '!');
+  } else if (byName) {
+    await sb.from('players').update({ auth_user_id: authUser.id }).eq('id', byName.id);
+    player = { ...byName, auth_user_id: authUser.id };
+    toast('Välkommen tillbaka, ' + byName.name + '!');
   } else {
     const { data: all } = await sb.from('players').select('id').eq('game_id', game.id);
     const idx = (all?.length || 0) % 8;
     const { data: np, error } = await sb.from('players').insert({
-      game_id: game.id, name, color: COLORS[idx], emoji: EMOJIS[idx], score: 0, is_host: false,
+      game_id: game.id, name, color: COLORS[idx], emoji: EMOJIS[idx],
+      score: 0, is_host: false, auth_user_id: authUser.id,
     }).select().single();
-    if (error) { setLoading('join-btn', false, 'Gå med'); return toast('Fel: ' + error.message); }
+    if (error) { setLoading('portal-join-btn', false, 'Gå med i lobby'); return toast('Fel: ' + error.message); }
     player = np;
   }
 
-  saveSession(player.id, name, game.id, code);
-  currentGame = game;
-  await subscribeToGame();
-  setLoading('join-btn', false, 'Gå med');
-  await renderByPhase(game);
+  setLoading('portal-join-btn', false, 'Gå med i lobby');
+  await navigateToPlayer({ ...player, games: game });
 }
 
-// ── Lobby ─────────────────────────────────────────────────────
+// ── Share link ────────────────────────────────────────
+function shareLink() {
+  const url = `${location.origin}${location.pathname}?code=${gameCode}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Åre Olympiaden', text: 'Gå med! Koden är ' + gameCode, url });
+  } else {
+    navigator.clipboard?.writeText(url);
+    toast('Länk kopierad!');
+  }
+}
+
+// ── Lobby ─────────────────────────────────────────────
 async function renderLobby() {
   document.getElementById('lobby-code').textContent = gameCode || '----';
   const { data: players } = await sb.from('players').select('*')
     .eq('game_id', gameId).order('score', { ascending: false });
+  const amHost = players?.find(p => p.id === myId)?.is_host || false;
   const el = document.getElementById('lobby-players');
   el.innerHTML = '';
   (players || []).forEach(p => {
     const d = document.createElement('div');
-    d.className = 'player-chip';
-    d.style.borderColor = p.color;
+    d.className = 'player-chip'; d.style.borderColor = p.color;
     d.innerHTML = `
       <span class="chip-emoji">${p.emoji}</span>
       <span class="chip-name">${p.name}${p.id === myId ? ' (du)' : ''}</span>
       ${p.score > 0 ? `<span class="chip-score">${p.score}p</span>` : ''}
+      ${amHost && p.id !== myId ? `<button class="remove-btn" onclick="removePlayer('${p.id}')">×</button>` : ''}
     `;
     el.appendChild(d);
   });
 }
 
-// ── Challenge selecting ───────────────────────────────────────
+async function removePlayer(playerId) {
+  await sb.from('players').delete().eq('id', playerId);
+}
+
+// ── Challenge selecting ────────────────────────────────
 async function initStartChallenge() {
   const { error } = await sb.from('games').update({
-    phase: 'selecting',
-    challenge_started_by: myId,
-    current_challenge: null,
-    current_challenge_emoji: null,
+    phase: 'selecting', challenge_started_by: myId,
+    current_challenge: null, current_challenge_emoji: null,
   }).eq('id', gameId);
   if (error) return toast('Fel: ' + error.message);
-
   pickedChallenge = null;
   document.getElementById('sel-emoji').textContent = '🎲';
   document.getElementById('sel-text').textContent  = 'Tryck slumpa';
@@ -889,38 +714,28 @@ async function confirmChallenge() {
   document.getElementById('confirm-btn').disabled = true;
   const newRound = (currentGame.current_round || 0) + 1;
   const { error } = await sb.from('games').update({
-    phase: 'active',
-    current_challenge: pickedChallenge.text,
-    current_challenge_emoji: pickedChallenge.emoji,
-    current_round: newRound,
+    phase: 'active', current_challenge: pickedChallenge.text,
+    current_challenge_emoji: pickedChallenge.emoji, current_round: newRound,
   }).eq('id', gameId);
-  if (error) {
-    toast('Fel: ' + error.message);
-    document.getElementById('confirm-btn').disabled = false;
-  }
+  if (error) { toast('Fel: ' + error.message); document.getElementById('confirm-btn').disabled = false; }
 }
 
 async function cancelSelecting() {
   await sb.from('games').update({ phase: 'lobby', challenge_started_by: null }).eq('id', gameId);
 }
 
-// ── Active challenge ──────────────────────────────────────────
+// ── Active ────────────────────────────────────────────
 async function renderActive(game) {
   document.getElementById('active-emoji').textContent = game.current_challenge_emoji || '📸';
   document.getElementById('active-text').textContent  = game.current_challenge || '';
   document.getElementById('active-round').textContent = 'RND ' + (game.current_round || 1);
   pendingPhoto = null;
-
   const { data: existing } = await sb.from('submissions').select('photo')
     .eq('game_id', gameId).eq('player_id', myId).eq('round', game.current_round).maybeSingle();
-
   if (existing) {
-    showZone('submitted');
-    document.getElementById('submitted-img').src = existing.photo;
+    showZone('submitted'); document.getElementById('submitted-img').src = existing.photo;
     await refreshSubProgress();
-  } else {
-    showZone('upload');
-  }
+  } else { showZone('upload'); }
 }
 
 function showZone(zone) {
@@ -930,19 +745,14 @@ function showZone(zone) {
 }
 
 function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  e.target.value = '';
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 800;
-      let w = img.width, h = img.height;
-      if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
-      else if (h > MAX) { w = w * MAX / h; h = MAX; }
-      const cv = document.createElement('canvas');
-      cv.width = w; cv.height = h;
+      const MAX = 800; let w = img.width, h = img.height;
+      if (w > h && w > MAX) { h = h * MAX / w; w = MAX; } else if (h > MAX) { w = w * MAX / h; h = MAX; }
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
       pendingPhoto = cv.toDataURL('image/jpeg', 0.75);
       document.getElementById('preview-img').src = pendingPhoto;
@@ -960,83 +770,58 @@ async function submitPhoto() {
   if (!pendingPhoto) return;
   setLoading('submit-btn', true, 'Skickar...');
   const { error } = await sb.from('submissions').upsert({
-    game_id:  gameId,
-    player_id: myId,
-    round:    currentGame.current_round,
-    photo:    pendingPhoto,
+    game_id: gameId, player_id: myId, round: currentGame.current_round, photo: pendingPhoto,
   }, { onConflict: 'game_id,player_id,round' });
   if (error) { setLoading('submit-btn', false, 'Skicka in'); return toast('Fel: ' + error.message); }
   setLoading('submit-btn', false, 'Skicka in');
   document.getElementById('submitted-img').src = pendingPhoto;
-  pendingPhoto = null;
-  showZone('submitted');
+  pendingPhoto = null; showZone('submitted');
   await refreshSubProgress();
 }
 
 async function refreshSubProgress() {
-  const round = currentGame?.current_round;
-  if (!round) return;
+  const round = currentGame?.current_round; if (!round) return;
   const [{ data: subs }, { data: players }] = await Promise.all([
     sb.from('submissions').select('player_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
   const done = subs?.length || 0, total = players?.length || 0;
-  const pct = total > 0 ? (done / total) * 100 : 0;
-  document.getElementById('sub-progress').style.width = pct + '%';
+  document.getElementById('sub-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
-
   if (done >= total && total > 0) {
     setTimeout(async () => {
       const { data: fresh } = await sb.from('games').select('phase').eq('id', gameId).single();
-      if (fresh?.phase === 'active') {
+      if (fresh?.phase === 'active')
         await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active');
-      }
     }, 800);
   }
 }
 
-// ── Voting ────────────────────────────────────────────────────
+// ── Voting ────────────────────────────────────────────
 async function renderVoting(game) {
-  hasVoted = false; selectedVoteFor = null;
-
+  selectedVoteFor = null;
   const [{ data: subs }, { data: existingVote }] = await Promise.all([
-    sb.from('submissions').select('*, players(name, color, emoji)').eq('game_id', gameId).eq('round', game.current_round),
+    sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
   ]);
-
-  const shuffled = shuffle(subs || []);
-  const grid = document.getElementById('voting-grid');
-  grid.innerHTML = '';
-  shuffled.forEach((sub, i) => {
+  const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
+  shuffle(subs || []).forEach((sub, i) => {
     const isMe = sub.player_id === myId;
     const div = document.createElement('div');
     div.className = 'photo-item' + (isMe ? ' mine' : '');
-    div.dataset.pid = sub.player_id;
     if (!isMe && !existingVote) div.onclick = () => selectVote(div, sub.player_id);
-    div.innerHTML = `
-      <img src="${sub.photo}" alt="">
-      <div class="vote-check">✓</div>
-      <div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>
-    `;
+    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
     grid.appendChild(div);
   });
-
-  if (existingVote) {
-    hasVoted = true; selectedVoteFor = existingVote.voted_for_id;
-    showVoteWaiting();
-  } else {
-    document.getElementById('vote-action').style.display  = '';
-    document.getElementById('vote-waiting').style.display = 'none';
-    document.getElementById('vote-btn').disabled = true;
-  }
+  if (existingVote) { selectedVoteFor = existingVote.voted_for_id; showVoteWaiting(); }
+  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; document.getElementById('vote-btn').disabled = true; }
   await refreshVoteProgress();
 }
 
 function selectVote(el, playerId) {
   document.querySelectorAll('.photo-item').forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedVoteFor = playerId;
+  el.classList.add('selected'); selectedVoteFor = playerId;
   document.getElementById('vote-btn').disabled = false;
 }
 
@@ -1044,15 +829,10 @@ async function submitVote() {
   if (!selectedVoteFor) return;
   setLoading('vote-btn', true, 'Röstar...');
   const { error } = await sb.from('votes').insert({
-    game_id:       gameId,
-    voter_id:      myId,
-    voted_for_id:  selectedVoteFor,
-    round:         currentGame.current_round,
+    game_id: gameId, voter_id: myId, voted_for_id: selectedVoteFor, round: currentGame.current_round,
   });
   if (error) { setLoading('vote-btn', false, 'Rösta'); return toast('Fel: ' + error.message); }
-  hasVoted = true;
-  setLoading('vote-btn', false, 'Rösta');
-  showVoteWaiting();
+  setLoading('vote-btn', false, 'Rösta'); showVoteWaiting();
   await refreshVoteProgress();
 }
 
@@ -1062,22 +842,18 @@ function showVoteWaiting() {
 }
 
 async function refreshVoteProgress() {
-  const round = currentGame?.current_round;
-  if (!round) return;
+  const round = currentGame?.current_round; if (!round) return;
   const [{ data: votes }, { data: players }] = await Promise.all([
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
   const done = votes?.length || 0, total = players?.length || 0;
-  const pct = total > 0 ? (done / total) * 100 : 0;
-  document.getElementById('vote-progress').style.width = pct + '%';
+  document.getElementById('vote-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('vote-count').textContent = `${done} / ${total} har röstat`;
-
   if (done >= total && total > 0) {
     setTimeout(async () => {
       const { data: fresh } = await sb.from('games').select('phase').eq('id', gameId).single();
       if (fresh?.phase === 'voting') {
-        // Race protection: only the client that wins this conditional update runs tally
         const { data: updated } = await sb.from('games')
           .update({ phase: 'results' }).eq('id', gameId).eq('phase', 'voting').select();
         if (updated?.length > 0) await tallyRound(round);
@@ -1090,10 +866,8 @@ async function tallyRound(round) {
   const { data: votes } = await sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('round', round);
   const counts = {};
   (votes || []).forEach(v => { counts[v.voted_for_id] = (counts[v.voted_for_id] || 0) + 1; });
-
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  const PTS = [3, 2, 1];
-  let lastCount = -1, rankIdx = 0;
+  const PTS = [3, 2, 1]; let lastCount = -1, rankIdx = 0;
   for (let i = 0; i < sorted.length; i++) {
     const [pid, cnt] = sorted[i];
     if (cnt !== lastCount) { rankIdx = i; lastCount = cnt; }
@@ -1103,164 +877,106 @@ async function tallyRound(round) {
       await sb.from('players').update({ score: (p?.score || 0) + pts }).eq('id', pid);
     }
   }
-
-  // Copy submissions to gallery (guard against double-run)
   const { data: alreadyIn } = await sb.from('gallery').select('id').eq('game_id', gameId).eq('round', round).limit(1);
   if (!alreadyIn?.length) {
     const { data: finalSubs } = await sb.from('submissions').select('*').eq('game_id', gameId).eq('round', round);
-    if (finalSubs?.length) {
-      await sb.from('gallery').insert(finalSubs.map(s => ({
-        game_id: gameId, player_id: s.player_id, photo: s.photo, round,
-      })));
-    }
+    if (finalSubs?.length)
+      await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round })));
   }
 }
 
-// ── Results ───────────────────────────────────────────────────
+// ── Results ───────────────────────────────────────────
 async function renderResults(game) {
   document.getElementById('results-title').textContent = game.current_challenge || 'Utmaning';
-
   const [{ data: votes }, { data: subs }, { data: players }] = await Promise.all([
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('players').select('*').eq('game_id', gameId).order('score', { ascending: false }),
   ]);
-
   const counts = {};
   (votes || []).forEach(v => { counts[v.voted_for_id] = (counts[v.voted_for_id] || 0) + 1; });
   const sorted = (subs || []).sort((a, b) => (counts[b.player_id] || 0) - (counts[a.player_id] || 0));
+  const RANK = ['🥇','🥈','🥉'], RC = ['var(--gold)','var(--silver)','var(--bronze)'], PTS = [3,2,1];
 
-  const RANK        = ['🥇','🥈','🥉'];
-  const RANK_COLORS = ['var(--gold)','var(--silver)','var(--bronze)'];
-  const PTS         = [3, 2, 1];
-
-  const rl = document.getElementById('results-list');
-  rl.innerHTML = '';
+  const rl = document.getElementById('results-list'); rl.innerHTML = '';
   sorted.forEach((sub, i) => {
-    const vc  = counts[sub.player_id] || 0;
-    const pts = PTS[i] || 0;
+    const vc = counts[sub.player_id] || 0, pts = PTS[i] || 0;
     const d = document.createElement('div');
     d.className = 'result-row';
-    d.style.borderColor = RANK_COLORS[i] || 'rgba(255,255,255,0.1)';
-    d.innerHTML = `
-      <span class="result-rank">${RANK[i] || (i + 1)}</span>
-      <img class="result-photo" src="${sub.photo}" alt="">
-      <span class="result-name">${sub.players?.name || '?'}</span>
-      <span class="result-pts">${vc} 🗳${pts ? ' +' + pts + 'p' : ''}</span>
-    `;
+    d.style.borderColor = RC[i] || 'rgba(255,255,255,0.1)';
+    d.innerHTML = `<span class="result-rank">${RANK[i]||(i+1)}</span><img class="result-photo" src="${sub.photo}" alt=""><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
     rl.appendChild(d);
   });
 
-  const tl = document.getElementById('total-scores');
-  tl.innerHTML = '';
+  const tl = document.getElementById('total-scores'); tl.innerHTML = '';
   (players || []).forEach((p, i) => {
-    const d = document.createElement('div');
-    d.className = 'player-chip';
-    d.style.borderColor = i === 0 ? 'var(--gold)' : i === 1 ? 'var(--silver)' : i === 2 ? 'var(--bronze)' : 'rgba(255,255,255,0.1)';
-    d.innerHTML = `
-      <span class="chip-emoji">${p.emoji}</span>
-      <span class="chip-name">${p.name}${p.id === myId ? ' (du)' : ''}</span>
-      <span class="chip-score">${p.score}p</span>
-    `;
+    const d = document.createElement('div'); d.className = 'player-chip';
+    d.style.borderColor = i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'rgba(255,255,255,0.1)';
+    d.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="chip-name">${p.name}${p.id===myId?' (du)':''}</span><span class="chip-score">${p.score}p</span>`;
     tl.appendChild(d);
   });
 }
 
 async function backToLobby() {
   await sb.from('games').update({
-    phase: 'lobby',
-    challenge_started_by: null,
-    current_challenge: null,
-    current_challenge_emoji: null,
+    phase: 'lobby', challenge_started_by: null,
+    current_challenge: null, current_challenge_emoji: null,
   }).eq('id', gameId);
 }
 
-// ── Gallery ───────────────────────────────────────────────────
+// ── Gallery ───────────────────────────────────────────
 async function openGallery() {
   document.getElementById('gallery-overlay').classList.add('open');
   await loadGallery();
 }
-
-function closeGallery() {
-  document.getElementById('gallery-overlay').classList.remove('open');
-}
+function closeGallery() { document.getElementById('gallery-overlay').classList.remove('open'); }
 
 async function loadGallery() {
-  const grid  = document.getElementById('gallery-grid');
-  const empty = document.getElementById('gallery-empty');
+  const grid = document.getElementById('gallery-grid'), empty = document.getElementById('gallery-empty');
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
-
-  const { data: items } = await sb.from('gallery')
-    .select('*, players(name, emoji)')
-    .eq('game_id', gameId)
-    .order('uploaded_at', { ascending: false });
-
+  const { data: items } = await sb.from('gallery').select('*, players(name, emoji)')
+    .eq('game_id', gameId).order('uploaded_at', { ascending: false });
   grid.innerHTML = '';
   if (!items?.length) { empty.style.display = ''; return; }
   empty.style.display = 'none';
-
   items.forEach(item => {
-    const d = document.createElement('div');
-    d.className = 'gallery-item';
-    d.innerHTML = `
-      <img src="${item.photo}" alt="">
-      <div class="gallery-item-meta">
-        <span>${item.players?.emoji || ''} ${item.players?.name || '?'}</span>
-        <span style="opacity:0.55;">${item.round ? 'Rnd ' + item.round : 'Bonus'}</span>
-      </div>
-    `;
+    const d = document.createElement('div'); d.className = 'gallery-item';
+    d.innerHTML = `<img src="${item.photo}" alt=""><div class="gallery-meta"><span>${item.players?.emoji||''} ${item.players?.name||'?'}</span><span style="opacity:.55">${item.round?'Rnd '+item.round:'Bonus'}</span></div>`;
     grid.appendChild(d);
   });
 }
 
 async function uploadBonusPhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  e.target.value = '';
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
     img.onload = async () => {
-      const MAX = 800;
-      let w = img.width, h = img.height;
-      if (w > h && w > MAX) { h = h * MAX / w; w = MAX; }
-      else if (h > MAX) { w = w * MAX / h; h = MAX; }
-      const cv = document.createElement('canvas');
-      cv.width = w; cv.height = h;
+      const MAX = 800; let w = img.width, h = img.height;
+      if (w > h && w > MAX) { h = h * MAX / w; w = MAX; } else if (h > MAX) { w = w * MAX / h; h = MAX; }
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      const photo = cv.toDataURL('image/jpeg', 0.75);
-      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo, round: null });
+      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.75), round: null });
       if (error) return toast('Kunde inte ladda upp');
-      toast('Bild uppladdad!');
-      await loadGallery();
+      toast('Bild uppladdad!'); await loadGallery();
     };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// ── Utils ─────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────
 function shuffle(arr) {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
-
-function setLoading(id, loading, text) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  btn.disabled   = loading;
-  btn.textContent = text;
-}
+function setLoading(id, loading, text) { const b = document.getElementById(id); if (b) { b.disabled = loading; b.textContent = text; } }
 
 let toastTimer;
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
