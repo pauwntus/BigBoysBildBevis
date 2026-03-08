@@ -245,25 +245,19 @@ input::placeholder { color: var(--muted); }
       <label class="label">E-postadress</label>
       <input type="email" id="auth-email" placeholder="din@email.com" autocomplete="email" inputmode="email">
     </div>
-    <button class="btn" id="auth-btn" onclick="sendOtp()">Skicka kod</button>
+    <button class="btn" id="auth-btn" onclick="sendOtp()">Skicka länk</button>
   </div>
 </div>
 
-<!-- ══ OTP ════════════════════════════════════════════ -->
+<!-- ══ EMAIL SENT ═══════════════════════════════════════ -->
 <div id="screen-otp" class="screen">
   <button class="back-btn" onclick="showScreen('screen-auth')">← Tillbaka</button>
-  <h3>Verifiera</h3>
-  <h2>Ange koden</h2>
+  <h3>Nästan klart</h3>
+  <h2>Kolla mejlen</h2>
   <div class="accent-line"></div>
-  <p class="text-muted" id="otp-hint" style="margin-bottom:20px;">Koden skickades till din e-post.</p>
-  <div class="stack">
-    <div>
-      <label class="label">6-siffrig kod</label>
-      <input type="text" id="otp-code" class="input-otp" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
-    </div>
-    <button class="btn" id="otp-btn" onclick="verifyOtp()">Verifiera</button>
-    <button class="btn btn-ghost" onclick="sendOtp(true)">Skicka ny kod</button>
-  </div>
+  <div style="font-size:56px; text-align:center; margin:24px 0;">📬</div>
+  <p class="text-muted" id="otp-hint" style="margin-bottom:24px; text-align:center;">Vi har skickat en inloggningslänk. Klicka på länken i mejlet för att logga in.</p>
+  <button class="btn btn-ghost" onclick="sendOtp(true)">Skicka ny länk</button>
 </div>
 
 <!-- ══ PORTAL – create or join ════════════════════════ -->
@@ -450,6 +444,14 @@ async function init() {
   const urlCode = new URLSearchParams(window.location.search).get('code');
   if (urlCode) window._pendingCode = urlCode;
 
+  // Listen for magic link redirect (same or new tab)
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !authUser) {
+      authUser = session.user;
+      await afterAuth();
+    }
+  });
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) { authUser = session.user; await afterAuth(); return; }
   showScreen('screen-home');
@@ -508,24 +510,15 @@ async function sendOtp(resend = false) {
   if (!email || !email.includes('@')) return toast('Ange en giltig e-postadress');
   pendingEmail = email;
   setLoading('auth-btn', true, 'Skickar...');
-  const { error } = await sb.auth.signInWithOtp({ email });
-  setLoading('auth-btn', false, 'Skicka kod');
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: 'https://pauwntus.github.io/BigBoysBildBevis' }
+  });
+  setLoading('auth-btn', false, 'Skicka länk');
   if (error) return toast('Fel: ' + error.message);
-  document.getElementById('otp-hint').textContent = 'Kod skickad till ' + email;
-  document.getElementById('otp-code').value = '';
+  document.getElementById('otp-hint').textContent = 'Länk skickad till ' + email + '. Klicka på den för att logga in.';
   showScreen('screen-otp');
-  toast('Koden är på väg!');
-}
-
-async function verifyOtp() {
-  const token = document.getElementById('otp-code').value.trim();
-  if (token.length !== 6) return toast('Ange den 6-siffriga koden');
-  setLoading('otp-btn', true, 'Verifierar...');
-  const { data, error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: 'email' });
-  setLoading('otp-btn', false, 'Verifiera');
-  if (error) return toast('Fel kod – försök igen');
-  authUser = data.user;
-  await afterAuth();
+  toast('Länken är på väg!');
 }
 
 async function logout() {
