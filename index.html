@@ -444,6 +444,14 @@ async function init() {
   const urlCode = new URLSearchParams(window.location.search).get('code');
   if (urlCode) window._pendingCode = urlCode;
 
+  // Handle Supabase hash errors (e.g. expired magic link)
+  const hashParams = new URLSearchParams(window.location.hash.slice(1));
+  if (hashParams.get('error')) {
+    const desc = hashParams.get('error_description') || hashParams.get('error');
+    toast('Länken gick ut – begär en ny: ' + decodeURIComponent(desc.replace(/\+/g, ' ')));
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
   // Listen for magic link redirect (same or new tab)
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && !authUser) {
@@ -510,10 +518,7 @@ async function sendOtp(resend = false) {
   if (!email || !email.includes('@')) return toast('Ange en giltig e-postadress');
   pendingEmail = email;
   setLoading('auth-btn', true, 'Skickar...');
-  const { error } = await sb.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: 'https://pauwntus.github.io/BigBoysBildBevis' }
-  });
+  const { error } = await sb.auth.signInWithOtp({ email });
   setLoading('auth-btn', false, 'Skicka länk');
   if (error) return toast('Fel: ' + error.message);
   document.getElementById('otp-hint').textContent = 'Länk skickad till ' + email + '. Klicka på den för att logga in.';
