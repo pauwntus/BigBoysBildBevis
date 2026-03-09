@@ -237,6 +237,7 @@ input::placeholder { color: var(--muted); }
     <div class="lightbox-name" id="lightbox-name"></div>
     <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
+  <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:20px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
 </div>
 
 <!-- Gallery screen -->
@@ -318,13 +319,11 @@ input::placeholder { color: var(--muted); }
     </div>
   </div>
   <div class="accent-line"></div>
+  <button class="btn" style="margin-bottom:20px;" onclick="initStartChallenge()">Starta utmaning</button>
   <h3 style="margin-bottom:10px;">Spelare</h3>
   <div id="lobby-players" class="stack-sm"></div>
-  <div style="padding-top:24px; margin-top:auto;">
-    <button class="btn" onclick="initStartChallenge()">Starta utmaning</button>
-    <div class="text-center" style="margin-top:16px;">
-      <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
-    </div>
+  <div class="text-center" style="padding-top:24px; margin-top:auto;">
+    <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
   </div>
 </div>
 
@@ -793,11 +792,11 @@ function handleFileUpload(e) {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 800; let w = img.width, h = img.height;
+      const MAX = 2000; let w = img.width, h = img.height;
       if (w > h && w > MAX) { h = h * MAX / w; w = MAX; } else if (h > MAX) { w = w * MAX / h; h = MAX; }
       const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      pendingPhoto = cv.toDataURL('image/jpeg', 0.75);
+      pendingPhoto = cv.toDataURL('image/jpeg', 0.92);
       document.getElementById('preview-img').src = pendingPhoto;
       showZone('preview');
     };
@@ -1073,18 +1072,32 @@ function buildGalleryItem(item) {
   const emoji = item.players?.emoji || '';
   const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
   d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy"><div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
-  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag);
+  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id);
   return d;
 }
 
 // ── Lightbox ──────────────────────────────────────────
-function openLightbox(src, name, tag) {
+let lightboxItemId = null;
+
+function openLightbox(src, name, tag, itemId, itemPlayerId) {
+  lightboxItemId = itemId || null;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox-name').textContent = name;
   document.getElementById('lightbox-tag').textContent = tag;
+  document.getElementById('lightbox-delete-btn').style.display = (itemId && itemPlayerId === myId) ? '' : 'none';
   document.getElementById('lightbox').classList.add('open');
 }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lightboxItemId = null; }
+
+async function deleteGalleryItem() {
+  if (!lightboxItemId) return;
+  if (!confirm('Radera bilden?')) return;
+  const { error } = await sb.from('gallery').delete().eq('id', lightboxItemId);
+  if (error) return toast('Kunde inte radera: ' + error.message);
+  closeLightbox();
+  toast('Bild raderad');
+  await loadGallery();
+}
 
 async function uploadBonusPhoto(e) {
   const file = e.target.files[0]; if (!file) return; e.target.value = '';
@@ -1092,11 +1105,11 @@ async function uploadBonusPhoto(e) {
   reader.onload = ev => {
     const img = new Image();
     img.onload = async () => {
-      const MAX = 800; let w = img.width, h = img.height;
+      const MAX = 2000; let w = img.width, h = img.height;
       if (w > h && w > MAX) { h = h * MAX / w; w = MAX; } else if (h > MAX) { w = w * MAX / h; h = MAX; }
       const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.75), round: null });
+      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.92), round: null });
       if (error) return toast('Kunde inte ladda upp');
       toast('Bild uppladdad!');
       if (activeScreen() === 'screen-gallery') await loadGallery();
