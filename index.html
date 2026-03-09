@@ -319,13 +319,11 @@ input::placeholder { color: var(--muted); }
     </div>
   </div>
   <div class="accent-line"></div>
+  <button class="btn" style="margin-bottom:20px;" onclick="initStartChallenge()">Starta utmaning</button>
   <h3 style="margin-bottom:10px;">Spelare</h3>
   <div id="lobby-players" class="stack-sm"></div>
-  <div style="padding-top:24px; margin-top:auto;">
-    <button class="btn" onclick="initStartChallenge()">Starta utmaning</button>
-    <div class="text-center" style="margin-top:16px;">
-      <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
-    </div>
+  <div class="text-center" style="padding-top:24px; margin-top:auto;">
+    <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
   </div>
 </div>
 
@@ -1074,19 +1072,19 @@ function buildGalleryItem(item) {
   const emoji = item.players?.emoji || '';
   const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
   d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy"><div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
-  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id);
+  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id);
   return d;
 }
 
 // ── Lightbox ──────────────────────────────────────────
 let lightboxItemId = null;
 
-function openLightbox(src, name, tag, itemId) {
+function openLightbox(src, name, tag, itemId, itemPlayerId) {
   lightboxItemId = itemId || null;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox-name').textContent = name;
   document.getElementById('lightbox-tag').textContent = tag;
-  document.getElementById('lightbox-delete-btn').style.display = itemId ? '' : 'none';
+  document.getElementById('lightbox-delete-btn').style.display = (itemId && itemPlayerId === myId) ? '' : 'none';
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lightboxItemId = null; }
