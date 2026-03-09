@@ -130,13 +130,21 @@ input::placeholder { color: var(--muted); }
 
 /* ── Voting grid ── */
 .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.photo-item { position: relative; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; }
+.photo-item { position: relative; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; user-select: none; -webkit-user-select: none; }
 .photo-item.selected { border-color: var(--orange); }
 .photo-item.mine { opacity: 0.55; cursor: default; }
-.photo-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.photo-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; pointer-events: none; }
 .vote-check { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; background: var(--orange); display: none; align-items: center; justify-content: center; font-size: 14px; color: white; }
 .photo-item.selected .vote-check { display: flex; }
-.photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 0; left: 0; right: 0; color: var(--cream); }
+.photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 22px; left: 0; right: 0; color: var(--cream); }
+.vote-hold-bar { position: absolute; bottom: 0; left: 0; height: 6px; width: 0%; background: var(--orange); transition: width 0.05s linear; }
+.photo-item.holding { border-color: var(--yellow); }
+@keyframes voteFloat {
+  0%   { transform: translateY(0px) rotate(-0.5deg); }
+  50%  { transform: translateY(-4px) rotate(0.5deg); }
+  100% { transform: translateY(0px) rotate(-0.5deg); }
+}
+.photo-item.floating { animation: voteFloat 2.5s ease-in-out infinite; }
 
 /* ── Results ── */
 .result-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-left: 4px solid rgba(255,255,255,0.1); }
@@ -395,7 +403,7 @@ input::placeholder { color: var(--muted); }
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
   <div id="vote-action">
-    <button class="btn" id="vote-btn" onclick="submitVote()" disabled>Rösta</button>
+    <p class="text-muted" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Håll inne på bilden du vill rösta på</p>
   </div>
   <div id="vote-waiting" style="display:none;" class="card text-center">
     <p class="text-muted" style="margin-bottom:10px;">Röstat! Väntar på de andra<span class="waiting-dots"></span></p>
@@ -854,34 +862,61 @@ async function renderVoting(game) {
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
   ]);
   const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
+  const HOLD_MS = 1500;
   shuffle(subs || []).forEach((sub, i) => {
     const isMe = sub.player_id === myId;
     const div = document.createElement('div');
-    div.className = 'photo-item' + (isMe ? ' mine' : '');
-    if (!isMe && !existingVote) div.onclick = () => selectVote(div, sub.player_id);
-    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
+    const delay = (i * 0.4).toFixed(1);
+    div.className = 'photo-item' + (isMe ? ' mine' : '') + (isMe ? '' : ' floating');
+    div.style.animationDelay = delay + 's';
+    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div><div class="vote-hold-bar"></div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
+    if (!isMe && !existingVote) {
+      let holdTimer = null, startTime = null, raf = null;
+      const bar = div.querySelector('.vote-hold-bar');
+      function startHold(e) {
+        e.preventDefault();
+        div.classList.add('holding');
+        startTime = Date.now();
+        function tick() {
+          const pct = Math.min((Date.now() - startTime) / HOLD_MS * 100, 100);
+          bar.style.width = pct + '%';
+          if (pct < 100) { raf = requestAnimationFrame(tick); }
+          else { cancelAnimationFrame(raf); lockVote(div, sub.player_id); }
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function cancelHold() {
+        cancelAnimationFrame(raf);
+        div.classList.remove('holding');
+        bar.style.width = '0%';
+      }
+      div.addEventListener('mousedown', startHold);
+      div.addEventListener('touchstart', startHold, { passive: false });
+      div.addEventListener('mouseup', cancelHold);
+      div.addEventListener('mouseleave', cancelHold);
+      div.addEventListener('touchend', cancelHold);
+      div.addEventListener('touchcancel', cancelHold);
+    }
     grid.appendChild(div);
   });
   if (existingVote) { selectedVoteFor = existingVote.voted_for_id; showVoteWaiting(); }
-  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; document.getElementById('vote-btn').disabled = true; }
+  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; }
   await refreshVoteProgress();
 }
 
-function selectVote(el, playerId) {
-  document.querySelectorAll('.photo-item').forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected'); selectedVoteFor = playerId;
-  document.getElementById('vote-btn').disabled = false;
-}
-
-async function submitVote() {
-  if (!selectedVoteFor) return;
-  setLoading('vote-btn', true, 'Röstar...');
+async function lockVote(el, playerId) {
+  document.querySelectorAll('.photo-item').forEach(i => {
+    i.classList.remove('holding', 'floating');
+    i.style.animationDelay = '';
+  });
+  el.classList.add('selected');
+  selectedVoteFor = playerId;
   const { error } = await sb.from('votes').insert({
     game_id: gameId, voter_id: myId, voted_for_id: selectedVoteFor, round: currentGame.current_round,
   });
-  if (error) { setLoading('vote-btn', false, 'Rösta'); return toast('Fel: ' + error.message); }
-  setLoading('vote-btn', false, 'Rösta'); showVoteWaiting();
+  if (error) { toast('Fel: ' + error.message); return; }
+  showVoteWaiting();
   await refreshVoteProgress();
 }
 
