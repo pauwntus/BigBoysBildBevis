@@ -237,6 +237,7 @@ input::placeholder { color: var(--muted); }
     <div class="lightbox-name" id="lightbox-name"></div>
     <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
+  <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:20px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
 </div>
 
 <!-- Gallery screen -->
@@ -1073,18 +1074,32 @@ function buildGalleryItem(item) {
   const emoji = item.players?.emoji || '';
   const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
   d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy"><div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
-  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag);
+  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id);
   return d;
 }
 
 // ── Lightbox ──────────────────────────────────────────
-function openLightbox(src, name, tag) {
+let lightboxItemId = null;
+
+function openLightbox(src, name, tag, itemId) {
+  lightboxItemId = itemId || null;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox-name').textContent = name;
   document.getElementById('lightbox-tag').textContent = tag;
+  document.getElementById('lightbox-delete-btn').style.display = itemId ? '' : 'none';
   document.getElementById('lightbox').classList.add('open');
 }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lightboxItemId = null; }
+
+async function deleteGalleryItem() {
+  if (!lightboxItemId) return;
+  if (!confirm('Radera bilden?')) return;
+  const { error } = await sb.from('gallery').delete().eq('id', lightboxItemId);
+  if (error) return toast('Kunde inte radera: ' + error.message);
+  closeLightbox();
+  toast('Bild raderad');
+  await loadGallery();
+}
 
 async function uploadBonusPhoto(e) {
   const file = e.target.files[0]; if (!file) return; e.target.value = '';
