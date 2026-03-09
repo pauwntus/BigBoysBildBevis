@@ -52,6 +52,7 @@ body::after {
   max-width: 480px; margin: 0 auto;
   flex-direction: column;
 }
+.has-bottom-nav .screen.active { padding-bottom: 90px; }
 .screen.active { display: flex; animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -103,7 +104,6 @@ input::placeholder { color: var(--muted); }
 
 /* ── Screen header ── */
 .screen-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
-.gallery-icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--cream); font-size: 13px; padding: 8px 12px; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
 .game-code-big { font-family: 'Anton', sans-serif; font-size: 44px; letter-spacing: 8px; color: var(--yellow); line-height: 1; }
 .share-btn { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 2px 0; text-decoration: underline; }
 
@@ -148,16 +148,38 @@ input::placeholder { color: var(--muted); }
 /* ── Mountain ── */
 .mountain-bg { position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 0; opacity: 0.05; }
 
-/* ── Gallery overlay ── */
-#gallery-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: none; flex-direction: column; }
-#gallery-overlay.open { display: flex; }
-.gallery-hdr { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-.gallery-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 4px; line-height: 1; }
-.gallery-body { flex: 1; overflow-y: auto; padding: 16px; }
-.gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.gallery-item { position: relative; }
-.gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-.gallery-meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.75)); padding: 20px 8px 6px; font-size: 11px; color: var(--cream); display: flex; justify-content: space-between; }
+/* ── Bottom nav ── */
+#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 2px solid rgba(255,255,255,0.07); display: none; z-index: 100; max-width: 480px; margin: 0 auto; left: 50%; transform: translateX(-50%); width: 100%; }
+#bottom-nav.visible { display: flex; }
+.nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px 16px; background: none; border: none; border-top: 3px solid transparent; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; gap: 3px; transition: color 0.15s, border-color 0.15s; }
+.nav-tab.active { color: var(--orange); border-top-color: var(--orange); }
+.nav-tab-icon { font-size: 22px; line-height: 1; }
+
+/* ── Gallery screen ── */
+#screen-gallery { padding-bottom: 80px; }
+.gallery-screen-hdr { margin-bottom: 8px; }
+.gallery-filter-row { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+.filter-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+.filter-chip.active { background: var(--orange); border-color: var(--orange); color: var(--bg); }
+.gallery-round-hdr { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.gallery-item { position: relative; cursor: pointer; overflow: hidden; }
+.gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; transition: transform 0.2s; }
+.gallery-item:active img { transform: scale(0.96); }
+.gallery-meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 22px 8px 7px; display: flex; justify-content: space-between; align-items: flex-end; }
+.gallery-meta-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cream); }
+.gallery-meta-tag { font-size: 10px; color: var(--orange); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+.gallery-upload-btn { position: fixed; bottom: 70px; right: 20px; width: 52px; height: 52px; background: var(--orange); border: none; font-size: 22px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 110; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
+.gallery-upload-btn.visible { display: flex; }
+
+/* ── Lightbox ── */
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+#lightbox.open { display: flex; }
+#lightbox-img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+#lightbox-meta { margin-top: 14px; text-align: center; }
+.lightbox-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: var(--cream); }
+.lightbox-tag { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.6); font-size: 30px; cursor: pointer; line-height: 1; }
 
 /* ── Selecting overlay ── */
 #selecting-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.92); z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 40px; }
@@ -194,18 +216,43 @@ input::placeholder { color: var(--muted); }
 
 <div id="toast"></div>
 
-<!-- Gallery overlay -->
-<div id="gallery-overlay">
-  <div class="gallery-hdr">
-    <button class="gallery-close" onclick="closeGallery()">✕</button>
-    <div style="flex:1;"><h3>Bildbank</h3><h2 style="font-size:26px;">Galleri</h2></div>
-    <button class="btn btn-sm btn-yellow btn-inline" onclick="document.getElementById('bonus-file-input').click()">+ Bild</button>
+<!-- Bottom nav (visible when in game) -->
+<div id="bottom-nav">
+  <button class="nav-tab active" id="nav-game" onclick="goToGameScreen()">
+    <span class="nav-tab-icon">🎮</span>Spel
+  </button>
+  <button class="nav-tab" id="nav-gallery" onclick="openGallery()">
+    <span class="nav-tab-icon">📷</span>Galleri
+  </button>
+</div>
+
+<!-- Gallery upload FAB -->
+<button class="gallery-upload-btn" id="gallery-upload-btn" onclick="document.getElementById('bonus-file-input').click()">+</button>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-meta">
+    <div class="lightbox-name" id="lightbox-name"></div>
+    <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
-  <div class="gallery-body">
+</div>
+
+<!-- Gallery screen -->
+<div id="screen-gallery" class="screen">
+  <div class="gallery-screen-hdr">
+    <h3>Bildbank</h3>
+    <h2>Galleri</h2>
+  </div>
+  <div class="accent-line"></div>
+  <div id="gallery-filter-row" class="gallery-filter-row"></div>
+  <div id="gallery-content">
     <div id="gallery-grid" class="gallery-grid"></div>
     <div id="gallery-empty" class="text-center" style="padding:60px 20px; display:none;">
       <div style="font-size:48px; margin-bottom:12px;">📭</div>
       <p class="text-muted">Inga bilder ännu</p>
+      <p class="text-muted" style="font-size:12px; margin-top:8px;">Tävlingsbilder sparas automatiskt efter varje runda</p>
     </div>
   </div>
 </div>
@@ -269,7 +316,6 @@ input::placeholder { color: var(--muted); }
       <div class="game-code-big" id="lobby-code">----</div>
       <button class="share-btn" onclick="shareLink()">Dela länk</button>
     </div>
-    <button class="gallery-icon-btn" onclick="openGallery()">📷 Galleri</button>
   </div>
   <div class="accent-line"></div>
   <h3 style="margin-bottom:10px;">Spelare</h3>
@@ -286,7 +332,6 @@ input::placeholder { color: var(--muted); }
 <div id="screen-selecting" class="screen">
   <div class="screen-hdr">
     <div><h3>Du väljer</h3><h2>Välj utmaning</h2></div>
-    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="accent-line"></div>
   <button class="btn btn-yellow" style="margin:20px 0 12px;" onclick="randomizeChallenge()">🎲 Slumpa utmaning</button>
@@ -313,7 +358,6 @@ input::placeholder { color: var(--muted); }
 <div id="screen-active" class="screen">
   <div class="screen-hdr">
     <div><h3>Pågående utmaning</h3><span class="badge badge-orange" id="active-round">RND 1</span></div>
-    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="challenge-card" style="margin-bottom:20px;">
     <div class="challenge-emoji" id="active-emoji">📸</div>
@@ -345,7 +389,6 @@ input::placeholder { color: var(--muted); }
 <div id="screen-voting" class="screen">
   <div class="screen-hdr">
     <div><h3>Röstning</h3><h2>Vilken är bäst?</h2></div>
-    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
@@ -363,7 +406,6 @@ input::placeholder { color: var(--muted); }
 <div id="screen-results" class="screen">
   <div class="screen-hdr">
     <div><h3>Resultat</h3><h2 id="results-title" style="line-height:1.1;">Utmaning</h2></div>
-    <button class="gallery-icon-btn" onclick="openGallery()">📷</button>
   </div>
   <div class="accent-line"></div>
   <div id="results-list" class="stack-sm" style="margin-bottom:20px;"></div>
@@ -506,12 +548,14 @@ function logout() {
   clearLocalSession(); currentGame = null; myName = null;
   localStorage.removeItem('my_name');
   document.getElementById('home-name').value = '';
+  showBottomNav(false);
   showScreen('screen-home');
 }
 
 function leaveGame() {
   if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
   clearLocalSession(); currentGame = null;
+  showBottomNav(false);
   showPortal();
 }
 
@@ -524,24 +568,31 @@ function showScreen(id) {
 async function renderByPhase(game) {
   currentGame = game;
   document.getElementById('selecting-overlay').classList.remove('open');
+  showBottomNav(true);
 
   if (game.phase === 'lobby') {
-    showScreen('screen-lobby'); await renderLobby();
+    currentGameScreen = 'screen-lobby';
+    showScreen('screen-lobby'); setNavTab('game'); await renderLobby();
   } else if (game.phase === 'selecting') {
     if (game.challenge_started_by === myId) {
-      showScreen('screen-selecting');
+      currentGameScreen = 'screen-selecting';
+      showScreen('screen-selecting'); setNavTab('game');
     } else {
-      showScreen('screen-lobby'); await renderLobby();
+      currentGameScreen = 'screen-lobby';
+      showScreen('screen-lobby'); setNavTab('game'); await renderLobby();
       const { data: starter } = await sb.from('players').select('name').eq('id', game.challenge_started_by).single();
       document.getElementById('selecting-who').textContent = starter?.name || '?';
       document.getElementById('selecting-overlay').classList.add('open');
     }
   } else if (game.phase === 'active') {
-    showScreen('screen-active'); await renderActive(game);
+    currentGameScreen = 'screen-active';
+    showScreen('screen-active'); setNavTab('game'); await renderActive(game);
   } else if (game.phase === 'voting') {
-    showScreen('screen-voting'); await renderVoting(game);
+    currentGameScreen = 'screen-voting';
+    showScreen('screen-voting'); setNavTab('game'); await renderVoting(game);
   } else if (game.phase === 'results') {
-    showScreen('screen-results'); await renderResults(game);
+    currentGameScreen = 'screen-results';
+    showScreen('screen-results'); setNavTab('game'); await renderResults(game);
   }
 }
 
@@ -916,27 +967,124 @@ async function backToLobby() {
   }).eq('id', gameId);
 }
 
+// ── Bottom nav & screen tracking ──────────────────────
+let currentGameScreen = 'screen-lobby';
+let galleryFilter = 'all'; // 'all' | number (round) | 'bonus'
+
+function showBottomNav(visible) {
+  document.getElementById('bottom-nav').classList.toggle('visible', visible);
+  document.getElementById('gallery-upload-btn').classList.toggle('visible', visible);
+  document.body.classList.toggle('has-bottom-nav', visible);
+}
+
+function setNavTab(tab) { // 'game' | 'gallery'
+  document.getElementById('nav-game').classList.toggle('active', tab === 'game');
+  document.getElementById('nav-gallery').classList.toggle('active', tab === 'gallery');
+}
+
+function goToGameScreen() {
+  showScreen(currentGameScreen);
+  setNavTab('game');
+}
+
 // ── Gallery ───────────────────────────────────────────
 async function openGallery() {
-  document.getElementById('gallery-overlay').classList.add('open');
+  showScreen('screen-gallery');
+  setNavTab('gallery');
+  galleryFilter = 'all';
   await loadGallery();
 }
-function closeGallery() { document.getElementById('gallery-overlay').classList.remove('open'); }
 
 async function loadGallery() {
-  const grid = document.getElementById('gallery-grid'), empty = document.getElementById('gallery-empty');
+  const grid = document.getElementById('gallery-grid');
+  const empty = document.getElementById('gallery-empty');
+  const filterRow = document.getElementById('gallery-filter-row');
+
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
+
   const { data: items } = await sb.from('gallery').select('*, players(name, emoji)')
-    .eq('game_id', gameId).order('uploaded_at', { ascending: false });
+    .eq('game_id', gameId).order('round', { ascending: true });
+
   grid.innerHTML = '';
-  if (!items?.length) { empty.style.display = ''; return; }
+
+  if (!items?.length) { empty.style.display = ''; filterRow.innerHTML = ''; return; }
   empty.style.display = 'none';
-  items.forEach(item => {
-    const d = document.createElement('div'); d.className = 'gallery-item';
-    d.innerHTML = `<img src="${item.photo}" alt=""><div class="gallery-meta"><span>${item.players?.emoji||''} ${item.players?.name||'?'}</span><span style="opacity:.55">${item.round?'Rnd '+item.round:'Bonus'}</span></div>`;
-    grid.appendChild(d);
+
+  // Build filter tabs
+  const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => a-b);
+  const hasBonus = items.some(i => !i.round);
+  filterRow.innerHTML = '';
+  const filters = [{ key: 'all', label: 'Alla' }, ...rounds.map(r => ({ key: r, label: 'Rnd ' + r })), ...(hasBonus ? [{ key: 'bonus', label: 'Bonus' }] : [])];
+  filters.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip' + (galleryFilter == f.key ? ' active' : '');
+    btn.textContent = f.label;
+    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items); updateFilterChips(filters); };
+    filterRow.appendChild(btn);
+  });
+
+  renderGalleryItems(items);
+}
+
+function updateFilterChips(filters) {
+  document.querySelectorAll('.filter-chip').forEach((btn, i) => {
+    btn.classList.toggle('active', filters[i] && filters[i].key == galleryFilter);
   });
 }
+
+function renderGalleryItems(items) {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+
+  const filtered = galleryFilter === 'all' ? items
+    : galleryFilter === 'bonus' ? items.filter(i => !i.round)
+    : items.filter(i => i.round == galleryFilter);
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px 0; color:var(--muted); font-size:14px;">Inga bilder</div>';
+    return;
+  }
+
+  if (galleryFilter === 'all') {
+    // Group by round
+    const groups = {};
+    filtered.forEach(item => {
+      const key = item.round ? 'r' + item.round : 'bonus';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    Object.entries(groups).forEach(([key, groupItems]) => {
+      const hdr = document.createElement('div');
+      hdr.className = 'gallery-round-hdr';
+      hdr.style.gridColumn = '1 / -1';
+      hdr.textContent = key === 'bonus' ? '— Bonusbilder —' : '— Runda ' + key.slice(1) + ' —';
+      grid.appendChild(hdr);
+      groupItems.forEach(item => grid.appendChild(buildGalleryItem(item)));
+    });
+  } else {
+    filtered.forEach(item => grid.appendChild(buildGalleryItem(item)));
+  }
+}
+
+function buildGalleryItem(item) {
+  const d = document.createElement('div');
+  d.className = 'gallery-item';
+  const name = item.players?.name || '?';
+  const emoji = item.players?.emoji || '';
+  const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
+  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy"><div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
+  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag);
+  return d;
+}
+
+// ── Lightbox ──────────────────────────────────────────
+function openLightbox(src, name, tag) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-name').textContent = name;
+  document.getElementById('lightbox-tag').textContent = tag;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 
 async function uploadBonusPhoto(e) {
   const file = e.target.files[0]; if (!file) return; e.target.value = '';
@@ -950,7 +1098,8 @@ async function uploadBonusPhoto(e) {
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
       const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.75), round: null });
       if (error) return toast('Kunde inte ladda upp');
-      toast('Bild uppladdad!'); await loadGallery();
+      toast('Bild uppladdad!');
+      if (activeScreen() === 'screen-gallery') await loadGallery();
     };
     img.src = ev.target.result;
   };
