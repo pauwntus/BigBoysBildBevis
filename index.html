@@ -181,13 +181,23 @@ input::placeholder { color: var(--muted); }
 .gallery-upload-btn.visible { display: flex; }
 
 /* ── Lightbox ── */
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 56px 20px 32px; overflow-y: auto; }
 #lightbox.open { display: flex; }
-#lightbox-img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+#lightbox-img { max-width: 100%; max-height: 55vh; object-fit: contain; flex-shrink: 0; }
 #lightbox-meta { margin-top: 14px; text-align: center; }
 .lightbox-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: var(--cream); }
 .lightbox-tag { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.6); font-size: 30px; cursor: pointer; line-height: 1; }
+/* ── Lightbox comments ── */
+#lightbox-comments-section { width: 100%; max-width: 360px; margin-top: 16px; }
+.lb-comment { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+.lb-comment-author { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; padding-top: 2px; min-width: 52px; }
+.lb-comment.goran .lb-comment-author { color: var(--orange); }
+.lb-comment.user .lb-comment-author { color: var(--muted); }
+.lb-comment-text { flex: 1; line-height: 1.45; color: var(--cream); font-style: italic; }
+.lb-comment-input-row { display: flex; gap: 6px; margin-top: 10px; }
+.lb-comment-input-row input { flex: 1; font-size: 13px; padding: 8px 10px; }
+.lb-comment-input-row button { background: var(--orange); border: none; color: var(--bg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px; cursor: pointer; clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%); white-space: nowrap; }
 
 /* ── Selecting overlay ── */
 #selecting-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.92); z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 40px; }
@@ -245,8 +255,13 @@ input::placeholder { color: var(--muted); }
     <div class="lightbox-name" id="lightbox-name"></div>
     <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
-  <button id="lightbox-roast-btn" onclick="roastaPhoto()" style="margin-top:16px; background:var(--orange); border:none; color:var(--bg); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:2px; padding:10px 24px; cursor:pointer; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);">Fråga Göran</button>
-  <div id="lightbox-roast-comment" style="display:none; margin-top:14px; max-width:320px; background:rgba(255,107,53,0.1); border-left:3px solid var(--orange); padding:10px 14px; font-size:14px; line-height:1.5; color:var(--cream); font-style:italic; text-align:left;"></div>
+  <div id="lightbox-comments-section">
+    <div id="lightbox-comments-list"></div>
+    <div class="lb-comment-input-row">
+      <input type="text" id="lightbox-comment-input" placeholder="Kommentera..." maxlength="200" onkeydown="if(event.key==='Enter')postComment()">
+      <button onclick="postComment()">Skicka</button>
+    </div>
+  </div>
   <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:16px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
 </div>
 
@@ -459,6 +474,8 @@ const CHALLENGES = [
 
 const COLORS = ['#FF6B35','#FFE135','#E63946','#2ed573','#a29bfe','#00d4ff','#fd79a8','#ffeaa7'];
 const EMOJIS = ['🎿','⛷️','🏔️','🥇','🦊','🐻','🦁','🐯'];
+
+const GORAN_VOTER_ID = '00000000-0000-0000-0000-000000000001';
 
 let myUUID        = null;
 let myId          = null;
@@ -859,10 +876,18 @@ async function refreshSubProgress() {
 // ── Voting ────────────────────────────────────────────
 async function renderVoting(game) {
   selectedVoteFor = null;
-  const [{ data: subs }, { data: existingVote }] = await Promise.all([
+  const [{ data: subs }, { data: existingVote }, { data: mePlayer }] = await Promise.all([
     sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
+    sb.from('players').select('is_host').eq('id', myId).single(),
   ]);
+  if (mePlayer?.is_host && subs?.length) {
+    const { data: goranVoted } = await sb.from('votes').select('id').eq('game_id', gameId).eq('voter_id', GORAN_VOTER_ID).eq('round', game.current_round).maybeSingle();
+    if (!goranVoted) {
+      const pick = subs[Math.floor(Math.random() * subs.length)];
+      await sb.from('votes').insert({ game_id: gameId, voter_id: GORAN_VOTER_ID, voted_for_id: pick.player_id, round: game.current_round });
+    }
+  }
   const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
   const HOLD_MS = 1500;
   shuffle(subs || []).forEach((sub, i) => {
@@ -933,7 +958,7 @@ async function refreshVoteProgress() {
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
-  const done = votes?.length || 0, total = players?.length || 0;
+  const done = (votes || []).filter(v => v.voter_id !== GORAN_VOTER_ID).length, total = players?.length || 0;
   document.getElementById('vote-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('vote-count').textContent = `${done} / ${total} har röstat`;
   if (done >= total && total > 0) {
@@ -1124,50 +1149,79 @@ function buildGalleryItem(item) {
 let lightboxItemId = null;
 let lightboxChallenge = null;
 
-function openLightbox(src, name, tag, itemId, itemPlayerId, challenge) {
+async function openLightbox(src, name, tag, itemId, itemPlayerId, challenge) {
   lightboxItemId = itemId || null;
   lightboxChallenge = challenge || null;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox-name').textContent = name;
   document.getElementById('lightbox-tag').textContent = tag;
   document.getElementById('lightbox-delete-btn').style.display = (itemId && itemPlayerId === myId) ? '' : 'none';
-  const roastComment = document.getElementById('lightbox-roast-comment');
-  roastComment.style.display = 'none';
-  roastComment.textContent = '';
-  document.getElementById('lightbox-roast-btn').textContent = 'Fråga Göran';
-  document.getElementById('lightbox-roast-btn').disabled = false;
+  document.getElementById('lightbox-comment-input').value = '';
+  document.getElementById('lightbox-comments-section').style.display = itemId ? '' : 'none';
   document.getElementById('lightbox').classList.add('open');
+  if (itemId) await loadLightboxComments(itemId, src, challenge);
 }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lightboxItemId = null; lightboxChallenge = null; }
 
-async function roastaPhoto() {
-  const btn = document.getElementById('lightbox-roast-btn');
-  const commentEl = document.getElementById('lightbox-roast-comment');
-  const src = document.getElementById('lightbox-img').src;
-  btn.textContent = 'Göran tänker...';
-  btn.disabled = true;
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  lightboxItemId = null; lightboxChallenge = null;
+  document.getElementById('lightbox-comments-list').innerHTML = '';
+}
+
+async function loadLightboxComments(itemId, src, challenge) {
+  const list = document.getElementById('lightbox-comments-list');
+  list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px 0;">Laddar...</div>';
+  const { data: comments } = await sb.from('comments').select('*').eq('gallery_item_id', itemId).order('created_at', { ascending: true });
+  renderComments(comments || []);
+  const hasGoran = (comments || []).some(c => c.is_goran);
+  if (!hasGoran && src) triggerGoranComment(itemId, src, challenge);
+}
+
+function renderComments(comments) {
+  const list = document.getElementById('lightbox-comments-list');
+  list.innerHTML = '';
+  if (!comments.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran håller på att formulera sig...</div>';
+    return;
+  }
+  comments.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'lb-comment ' + (c.is_goran ? 'goran' : 'user');
+    d.innerHTML = `<span class="lb-comment-author">${c.is_goran ? 'Göran' : escHtml(c.author_name)}</span><span class="lb-comment-text">${escHtml(c.text)}</span>`;
+    list.appendChild(d);
+  });
+}
+
+async function triggerGoranComment(itemId, src, challenge) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/roast-photo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-      body: JSON.stringify({ image: src, challenge: lightboxChallenge }),
+      body: JSON.stringify({ image: src, challenge }),
     });
     const data = await res.json();
     if (data.comment) {
-      commentEl.textContent = data.comment;
-      commentEl.style.display = '';
-      btn.style.display = 'none';
-    } else {
-      btn.textContent = 'Fråga Göran';
-      btn.disabled = false;
-      toast('Något gick fel');
+      await sb.from('comments').insert({ gallery_item_id: itemId, author_name: 'Göran', is_goran: true, text: data.comment });
+      if (lightboxItemId === itemId) {
+        const { data: fresh } = await sb.from('comments').select('*').eq('gallery_item_id', itemId).order('created_at', { ascending: true });
+        renderComments(fresh || []);
+      }
     }
-  } catch {
-    btn.textContent = 'Fråga Göran';
-    btn.disabled = false;
-    toast('Kunde inte nå AI');
-  }
+  } catch { /* tyst fel – Göran kom inte */ }
 }
+
+async function postComment() {
+  const input = document.getElementById('lightbox-comment-input');
+  const text = input.value.trim();
+  if (!text || !lightboxItemId || !myName) return;
+  input.value = '';
+  const { error } = await sb.from('comments').insert({ gallery_item_id: lightboxItemId, author_name: myName, is_goran: false, text });
+  if (error) { toast('Kunde inte skicka kommentar'); return; }
+  const { data: fresh } = await sb.from('comments').select('*').eq('gallery_item_id', lightboxItemId).order('created_at', { ascending: true });
+  renderComments(fresh || []);
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function deleteGalleryItem() {
   if (!lightboxItemId) return;
