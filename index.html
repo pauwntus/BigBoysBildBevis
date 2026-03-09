@@ -1181,7 +1181,6 @@ function renderComments(comments) {
   const list = document.getElementById('lightbox-comments-list');
   list.innerHTML = '';
   if (!comments.length) {
-    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran håller på att formulera sig...</div>';
     return;
   }
   comments.forEach(c => {
