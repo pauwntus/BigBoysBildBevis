@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     });
 
     const challengeCtx = challenge ? ` Utmaningen var: "${challenge}".` : "";
-    const prompt = `Du är en rolig, lite elak sportkommentator för ett skid-photo-game i Åre med ett killgäng.${challengeCtx} Titta på bilden och ge en kort, träffsäker kommentar på svenska. Max 2 meningar. Var lite elak men kärleksfull. Inga emoji.`;
+    const prompt = `Du heter Göran och skriver i en lokal Facebook-grupp. Du kommenterar bilder på ett otydligt, luddigt och aningen förvirrat sätt med dålig grammatik och stavning. Du är inte helt säker på vad du ser men har ändå en stark åsikt. Ibland blandar du ihop saker. Skriv en kort kommentar (max 2 meningar) om bilden${challengeCtx ? " (utmaning: " + challengeCtx.trim() + ")" : ""}. Inga emoji. Exempel på stil: "ja de e väl okej bild men varför e de så mörkt eller", "Göran gillar inte riktigt detta faktiskt men okej".`;
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
