@@ -382,6 +382,9 @@ input::placeholder { color: var(--muted); }
       <p class="text-muted" style="margin-top:8px; font-size:13px;" id="sub-count">0 / 0</p>
     </div>
   </div>
+  <div id="host-abort-zone" style="display:none; margin-top:24px; text-align:center;">
+    <button class="btn btn-ghost" style="color:var(--red); border-color:var(--red);" onclick="abortChallenge()">Avbryt utmaning</button>
+  </div>
 </div>
 
 <!-- ══ VOTING ═════════════════════════════════════════ -->
@@ -761,12 +764,21 @@ async function cancelSelecting() {
   await sb.from('games').update({ phase: 'lobby', challenge_started_by: null }).eq('id', gameId);
 }
 
+async function abortChallenge() {
+  if (!confirm('Avbryt pågående utmaning? Alla inlämnade foton raderas.')) return;
+  await sb.from('submissions').delete().eq('game_id', gameId).eq('round', currentGame.current_round);
+  await sb.from('games').update({ phase: 'lobby', challenge_started_by: null }).eq('id', gameId);
+}
+
 // ── Active ────────────────────────────────────────────
 async function renderActive(game) {
   document.getElementById('active-emoji').textContent = game.current_challenge_emoji || '📸';
   document.getElementById('active-text').textContent  = game.current_challenge || '';
   document.getElementById('active-round').textContent = 'RND ' + (game.current_round || 1);
   pendingPhoto = null;
+  const { data: players } = await sb.from('players').select('is_host').eq('id', myId).single();
+  const amHost = players?.is_host || false;
+  document.getElementById('host-abort-zone').style.display = amHost ? '' : 'none';
   const { data: existing } = await sb.from('submissions').select('photo')
     .eq('game_id', gameId).eq('player_id', myId).eq('round', game.current_round).maybeSingle();
   if (existing) {
