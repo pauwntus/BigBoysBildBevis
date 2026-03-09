@@ -130,13 +130,21 @@ input::placeholder { color: var(--muted); }
 
 /* ── Voting grid ── */
 .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.photo-item { position: relative; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; }
+.photo-item { position: relative; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; user-select: none; -webkit-user-select: none; }
 .photo-item.selected { border-color: var(--orange); }
 .photo-item.mine { opacity: 0.55; cursor: default; }
-.photo-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.photo-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; pointer-events: none; }
 .vote-check { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; background: var(--orange); display: none; align-items: center; justify-content: center; font-size: 14px; color: white; }
 .photo-item.selected .vote-check { display: flex; }
-.photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 0; left: 0; right: 0; color: var(--cream); }
+.photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 22px; left: 0; right: 0; color: var(--cream); }
+.vote-hold-bar { position: absolute; bottom: 0; left: 0; height: 6px; width: 0%; background: var(--orange); transition: width 0.05s linear; }
+.photo-item.holding { border-color: var(--yellow); }
+@keyframes voteFloat {
+  0%   { transform: translateY(0px) rotate(-0.5deg); }
+  50%  { transform: translateY(-4px) rotate(0.5deg); }
+  100% { transform: translateY(0px) rotate(-0.5deg); }
+}
+.photo-item.floating { animation: voteFloat 2.5s ease-in-out infinite; }
 
 /* ── Results ── */
 .result-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-left: 4px solid rgba(255,255,255,0.1); }
@@ -173,13 +181,23 @@ input::placeholder { color: var(--muted); }
 .gallery-upload-btn.visible { display: flex; }
 
 /* ── Lightbox ── */
-#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 56px 20px 32px; overflow-y: auto; }
 #lightbox.open { display: flex; }
-#lightbox-img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+#lightbox-img { max-width: 100%; max-height: 55vh; object-fit: contain; flex-shrink: 0; }
 #lightbox-meta { margin-top: 14px; text-align: center; }
 .lightbox-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: var(--cream); }
 .lightbox-tag { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.6); font-size: 30px; cursor: pointer; line-height: 1; }
+/* ── Lightbox comments ── */
+#lightbox-comments-section { width: 100%; max-width: 360px; margin-top: 16px; }
+.lb-comment { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+.lb-comment-author { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; padding-top: 2px; min-width: 52px; }
+.lb-comment.goran .lb-comment-author { color: var(--orange); }
+.lb-comment.user .lb-comment-author { color: var(--muted); }
+.lb-comment-text { flex: 1; line-height: 1.45; color: var(--cream); font-style: italic; }
+.lb-comment-input-row { display: flex; gap: 6px; margin-top: 10px; }
+.lb-comment-input-row input { flex: 1; font-size: 13px; padding: 8px 10px; }
+.lb-comment-input-row button { background: var(--orange); border: none; color: var(--bg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px; cursor: pointer; clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%); white-space: nowrap; }
 
 /* ── Selecting overlay ── */
 #selecting-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.92); z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 40px; }
@@ -237,7 +255,14 @@ input::placeholder { color: var(--muted); }
     <div class="lightbox-name" id="lightbox-name"></div>
     <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
-  <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:20px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
+  <div id="lightbox-comments-section">
+    <div id="lightbox-comments-list"></div>
+    <div class="lb-comment-input-row">
+      <input type="text" id="lightbox-comment-input" placeholder="Kommentera..." maxlength="200" onkeydown="if(event.key==='Enter')postComment()">
+      <button onclick="postComment()">Skicka</button>
+    </div>
+  </div>
+  <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:16px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
 </div>
 
 <!-- Gallery screen -->
@@ -382,6 +407,9 @@ input::placeholder { color: var(--muted); }
       <p class="text-muted" style="margin-top:8px; font-size:13px;" id="sub-count">0 / 0</p>
     </div>
   </div>
+  <div id="host-abort-zone" style="display:none; margin-top:24px; text-align:center;">
+    <button class="btn btn-ghost" style="color:var(--red); border-color:var(--red);" onclick="abortChallenge()">Avbryt utmaning</button>
+  </div>
 </div>
 
 <!-- ══ VOTING ═════════════════════════════════════════ -->
@@ -392,7 +420,7 @@ input::placeholder { color: var(--muted); }
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
   <div id="vote-action">
-    <button class="btn" id="vote-btn" onclick="submitVote()" disabled>Rösta</button>
+    <p class="text-muted" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Håll inne på bilden du vill rösta på</p>
   </div>
   <div id="vote-waiting" style="display:none;" class="card text-center">
     <p class="text-muted" style="margin-bottom:10px;">Röstat! Väntar på de andra<span class="waiting-dots"></span></p>
@@ -446,6 +474,8 @@ const CHALLENGES = [
 
 const COLORS = ['#FF6B35','#FFE135','#E63946','#2ed573','#a29bfe','#00d4ff','#fd79a8','#ffeaa7'];
 const EMOJIS = ['🎿','⛷️','🏔️','🥇','🦊','🐻','🦁','🐯'];
+
+const GORAN_VOTER_ID = '00000000-0000-0000-0000-000000000001';
 
 let myUUID        = null;
 let myId          = null;
@@ -761,12 +791,21 @@ async function cancelSelecting() {
   await sb.from('games').update({ phase: 'lobby', challenge_started_by: null }).eq('id', gameId);
 }
 
+async function abortChallenge() {
+  if (!confirm('Avbryt pågående utmaning? Alla inlämnade foton raderas.')) return;
+  await sb.from('submissions').delete().eq('game_id', gameId).eq('round', currentGame.current_round);
+  await sb.from('games').update({ phase: 'lobby', challenge_started_by: null }).eq('id', gameId);
+}
+
 // ── Active ────────────────────────────────────────────
 async function renderActive(game) {
   document.getElementById('active-emoji').textContent = game.current_challenge_emoji || '📸';
   document.getElementById('active-text').textContent  = game.current_challenge || '';
   document.getElementById('active-round').textContent = 'RND ' + (game.current_round || 1);
   pendingPhoto = null;
+  const { data: players } = await sb.from('players').select('is_host').eq('id', myId).single();
+  const amHost = players?.is_host || false;
+  document.getElementById('host-abort-zone').style.display = amHost ? '' : 'none';
   const { data: existing } = await sb.from('submissions').select('photo')
     .eq('game_id', gameId).eq('player_id', myId).eq('round', game.current_round).maybeSingle();
   if (existing) {
@@ -837,39 +876,74 @@ async function refreshSubProgress() {
 // ── Voting ────────────────────────────────────────────
 async function renderVoting(game) {
   selectedVoteFor = null;
-  const [{ data: subs }, { data: existingVote }] = await Promise.all([
+  const [{ data: subs }, { data: existingVote }, { data: mePlayer }] = await Promise.all([
     sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
+    sb.from('players').select('is_host').eq('id', myId).single(),
   ]);
+  if (mePlayer?.is_host && subs?.length) {
+    const { data: goranVoted } = await sb.from('votes').select('id').eq('game_id', gameId).eq('voter_id', GORAN_VOTER_ID).eq('round', game.current_round).maybeSingle();
+    if (!goranVoted) {
+      const pick = subs[Math.floor(Math.random() * subs.length)];
+      await sb.from('votes').insert({ game_id: gameId, voter_id: GORAN_VOTER_ID, voted_for_id: pick.player_id, round: game.current_round });
+    }
+  }
   const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
+  const HOLD_MS = 1500;
   shuffle(subs || []).forEach((sub, i) => {
     const isMe = sub.player_id === myId;
     const div = document.createElement('div');
-    div.className = 'photo-item' + (isMe ? ' mine' : '');
-    if (!isMe && !existingVote) div.onclick = () => selectVote(div, sub.player_id);
-    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
+    const delay = (i * 0.4).toFixed(1);
+    div.className = 'photo-item' + (isMe ? ' mine' : '') + (isMe ? '' : ' floating');
+    div.style.animationDelay = delay + 's';
+    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div><div class="vote-hold-bar"></div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
+    if (!isMe && !existingVote) {
+      let holdTimer = null, startTime = null, raf = null;
+      const bar = div.querySelector('.vote-hold-bar');
+      function startHold(e) {
+        e.preventDefault();
+        div.classList.add('holding');
+        startTime = Date.now();
+        function tick() {
+          const pct = Math.min((Date.now() - startTime) / HOLD_MS * 100, 100);
+          bar.style.width = pct + '%';
+          if (pct < 100) { raf = requestAnimationFrame(tick); }
+          else { cancelAnimationFrame(raf); lockVote(div, sub.player_id); }
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function cancelHold() {
+        cancelAnimationFrame(raf);
+        div.classList.remove('holding');
+        bar.style.width = '0%';
+      }
+      div.addEventListener('mousedown', startHold);
+      div.addEventListener('touchstart', startHold, { passive: false });
+      div.addEventListener('mouseup', cancelHold);
+      div.addEventListener('mouseleave', cancelHold);
+      div.addEventListener('touchend', cancelHold);
+      div.addEventListener('touchcancel', cancelHold);
+    }
     grid.appendChild(div);
   });
   if (existingVote) { selectedVoteFor = existingVote.voted_for_id; showVoteWaiting(); }
-  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; document.getElementById('vote-btn').disabled = true; }
+  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; }
   await refreshVoteProgress();
 }
 
-function selectVote(el, playerId) {
-  document.querySelectorAll('.photo-item').forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected'); selectedVoteFor = playerId;
-  document.getElementById('vote-btn').disabled = false;
-}
-
-async function submitVote() {
-  if (!selectedVoteFor) return;
-  setLoading('vote-btn', true, 'Röstar...');
+async function lockVote(el, playerId) {
+  document.querySelectorAll('.photo-item').forEach(i => {
+    i.classList.remove('holding', 'floating');
+    i.style.animationDelay = '';
+  });
+  el.classList.add('selected');
+  selectedVoteFor = playerId;
   const { error } = await sb.from('votes').insert({
     game_id: gameId, voter_id: myId, voted_for_id: selectedVoteFor, round: currentGame.current_round,
   });
-  if (error) { setLoading('vote-btn', false, 'Rösta'); return toast('Fel: ' + error.message); }
-  setLoading('vote-btn', false, 'Rösta'); showVoteWaiting();
+  if (error) { toast('Fel: ' + error.message); return; }
+  showVoteWaiting();
   await refreshVoteProgress();
 }
 
@@ -884,7 +958,7 @@ async function refreshVoteProgress() {
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
-  const done = votes?.length || 0, total = players?.length || 0;
+  const done = (votes || []).filter(v => v.voter_id !== GORAN_VOTER_ID).length, total = players?.length || 0;
   document.getElementById('vote-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('vote-count').textContent = `${done} / ${total} har röstat`;
   if (done >= total && total > 0) {
@@ -1073,16 +1147,81 @@ function buildGalleryItem(item) {
 
 // ── Lightbox ──────────────────────────────────────────
 let lightboxItemId = null;
+let lightboxChallenge = null;
 
-function openLightbox(src, name, tag, itemId, itemPlayerId) {
+async function openLightbox(src, name, tag, itemId, itemPlayerId, challenge) {
   lightboxItemId = itemId || null;
+  lightboxChallenge = challenge || null;
   document.getElementById('lightbox-img').src = src;
   document.getElementById('lightbox-name').textContent = name;
   document.getElementById('lightbox-tag').textContent = tag;
   document.getElementById('lightbox-delete-btn').style.display = (itemId && itemPlayerId === myId) ? '' : 'none';
+  document.getElementById('lightbox-comment-input').value = '';
+  document.getElementById('lightbox-comments-section').style.display = itemId ? '' : 'none';
   document.getElementById('lightbox').classList.add('open');
+  if (itemId) await loadLightboxComments(itemId, src, challenge);
 }
-function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); lightboxItemId = null; }
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  lightboxItemId = null; lightboxChallenge = null;
+  document.getElementById('lightbox-comments-list').innerHTML = '';
+}
+
+async function loadLightboxComments(itemId, src, challenge) {
+  const list = document.getElementById('lightbox-comments-list');
+  list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px 0;">Laddar...</div>';
+  const { data: comments } = await sb.from('comments').select('*').eq('gallery_item_id', itemId).order('created_at', { ascending: true });
+  renderComments(comments || []);
+  const hasGoran = (comments || []).some(c => c.is_goran);
+  if (!hasGoran && src) triggerGoranComment(itemId, src, challenge);
+}
+
+function renderComments(comments) {
+  const list = document.getElementById('lightbox-comments-list');
+  list.innerHTML = '';
+  if (!comments.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran håller på att formulera sig...</div>';
+    return;
+  }
+  comments.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'lb-comment ' + (c.is_goran ? 'goran' : 'user');
+    d.innerHTML = `<span class="lb-comment-author">${c.is_goran ? 'Göran' : escHtml(c.author_name)}</span><span class="lb-comment-text">${escHtml(c.text)}</span>`;
+    list.appendChild(d);
+  });
+}
+
+async function triggerGoranComment(itemId, src, challenge) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/roast-photo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({ image: src, challenge }),
+    });
+    const data = await res.json();
+    if (data.comment) {
+      await sb.from('comments').insert({ gallery_item_id: itemId, author_name: 'Göran', is_goran: true, text: data.comment });
+      if (lightboxItemId === itemId) {
+        const { data: fresh } = await sb.from('comments').select('*').eq('gallery_item_id', itemId).order('created_at', { ascending: true });
+        renderComments(fresh || []);
+      }
+    }
+  } catch { /* tyst fel – Göran kom inte */ }
+}
+
+async function postComment() {
+  const input = document.getElementById('lightbox-comment-input');
+  const text = input.value.trim();
+  if (!text || !lightboxItemId || !myName) return;
+  input.value = '';
+  const { error } = await sb.from('comments').insert({ gallery_item_id: lightboxItemId, author_name: myName, is_goran: false, text });
+  if (error) { toast('Kunde inte skicka kommentar'); return; }
+  const { data: fresh } = await sb.from('comments').select('*').eq('gallery_item_id', lightboxItemId).order('created_at', { ascending: true });
+  renderComments(fresh || []);
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function deleteGalleryItem() {
   if (!lightboxItemId) return;
