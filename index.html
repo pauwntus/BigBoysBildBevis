@@ -245,7 +245,7 @@ input::placeholder { color: var(--muted); }
     <div class="lightbox-name" id="lightbox-name"></div>
     <div class="lightbox-tag" id="lightbox-tag"></div>
   </div>
-  <button id="lightbox-roast-btn" onclick="roastaPhoto()" style="margin-top:16px; background:var(--orange); border:none; color:var(--bg); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:2px; padding:10px 24px; cursor:pointer; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);">Roasta med AI</button>
+  <button id="lightbox-roast-btn" onclick="roastaPhoto()" style="margin-top:16px; background:var(--orange); border:none; color:var(--bg); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:2px; padding:10px 24px; cursor:pointer; clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);">Fråga Göran</button>
   <div id="lightbox-roast-comment" style="display:none; margin-top:14px; max-width:320px; background:rgba(255,107,53,0.1); border-left:3px solid var(--orange); padding:10px 14px; font-size:14px; line-height:1.5; color:var(--cream); font-style:italic; text-align:left;"></div>
   <button id="lightbox-delete-btn" onclick="deleteGalleryItem()" style="margin-top:16px; background:none; border:1px solid rgba(255,255,255,0.2); color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:8px 20px; cursor:pointer;">🗑 Radera bild</button>
 </div>
@@ -1134,7 +1134,7 @@ function openLightbox(src, name, tag, itemId, itemPlayerId, challenge) {
   const roastComment = document.getElementById('lightbox-roast-comment');
   roastComment.style.display = 'none';
   roastComment.textContent = '';
-  document.getElementById('lightbox-roast-btn').textContent = 'Roasta med AI';
+  document.getElementById('lightbox-roast-btn').textContent = 'Fråga Göran';
   document.getElementById('lightbox-roast-btn').disabled = false;
   document.getElementById('lightbox').classList.add('open');
 }
@@ -1144,7 +1144,7 @@ async function roastaPhoto() {
   const btn = document.getElementById('lightbox-roast-btn');
   const commentEl = document.getElementById('lightbox-roast-comment');
   const src = document.getElementById('lightbox-img').src;
-  btn.textContent = 'Tänker...';
+  btn.textContent = 'Göran tänker...';
   btn.disabled = true;
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/roast-photo`, {
@@ -1158,12 +1158,12 @@ async function roastaPhoto() {
       commentEl.style.display = '';
       btn.style.display = 'none';
     } else {
-      btn.textContent = 'Roasta med AI';
+      btn.textContent = 'Fråga Göran';
       btn.disabled = false;
       toast('Något gick fel');
     }
   } catch {
-    btn.textContent = 'Roasta med AI';
+    btn.textContent = 'Fråga Göran';
     btn.disabled = false;
     toast('Kunde inte nå AI');
   }
