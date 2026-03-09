@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Åre Olympiaden</title>
+<title>Big Boys BildBevis</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -659,7 +659,7 @@ async function joinGame() {
 function shareLink() {
   const url = `${location.origin}${location.pathname}?code=${gameCode}`;
   if (navigator.share) {
-    navigator.share({ title: 'Åre Olympiaden', text: 'Gå med! Koden är ' + gameCode, url });
+    navigator.share({ title: 'Big Boys BildBevis', text: 'Gå med! Koden är ' + gameCode, url });
   } else {
     navigator.clipboard?.writeText(url);
     toast('Länk kopierad!');
