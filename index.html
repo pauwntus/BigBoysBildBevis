@@ -1195,22 +1195,18 @@ function renderComments(comments) {
 async function triggerGoranComment(itemId, src, challenge) {
   const list = document.getElementById('lightbox-comments-list');
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/roast-photo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
-      body: JSON.stringify({ image: src, challenge }),
+    const { data, error: fnErr } = await sb.functions.invoke('roast-photo', {
+      body: { image: src, challenge },
     });
-    if (!res.ok) {
-      const err = await res.text();
-      if (lightboxItemId === itemId) list.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran svarar inte (${res.status}: ${err.slice(0,80)})</div>`;
+    if (fnErr) {
+      if (lightboxItemId === itemId) list.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran svarar inte: ${escHtml(fnErr.message)}</div>`;
       return;
     }
-    const data = await res.json();
-    if (data.error) {
+    if (data?.error) {
       if (lightboxItemId === itemId) list.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran krånglar: ${escHtml(data.error)}</div>`;
       return;
     }
-    if (data.comment) {
+    if (data?.comment) {
       const { error: dbErr } = await sb.from('comments').insert({ gallery_item_id: itemId, author_name: 'Göran', is_goran: true, text: data.comment });
       if (dbErr) {
         if (lightboxItemId === itemId) list.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:4px 0;font-style:italic;">Göran sa: "${escHtml(data.comment)}" (kunde ej spara: ${escHtml(dbErr.message)})</div>`;
