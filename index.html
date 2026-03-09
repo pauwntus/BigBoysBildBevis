@@ -958,9 +958,10 @@ async function refreshVoteProgress() {
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
+  const goranVoted = (votes || []).some(v => v.voter_id === GORAN_VOTER_ID);
   const done = (votes || []).filter(v => v.voter_id !== GORAN_VOTER_ID).length, total = players?.length || 0;
   document.getElementById('vote-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
-  document.getElementById('vote-count').textContent = `${done} / ${total} har röstat`;
+  document.getElementById('vote-count').textContent = `${done} / ${total} har röstat` + (goranVoted ? ' · Göran ✓' : ' · Göran röstar…');
   if (done >= total && total > 0) {
     setTimeout(async () => {
       const { data: fresh } = await sb.from('games').select('phase').eq('id', gameId).single();
