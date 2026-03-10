@@ -177,6 +177,7 @@ input::placeholder { color: var(--muted); }
 .gallery-meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 22px 8px 7px; display: flex; justify-content: space-between; align-items: flex-end; }
 .gallery-meta-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cream); }
 .gallery-meta-tag { font-size: 10px; color: var(--orange); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+.gallery-comment-badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.72); color: var(--cream); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; letter-spacing: 0.5px; padding: 2px 6px; display: flex; align-items: center; gap: 3px; pointer-events: none; }
 .gallery-upload-btn { position: fixed; bottom: 70px; right: 20px; width: 52px; height: 52px; background: var(--yellow); border: none; font-size: 22px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 110; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
 .gallery-upload-btn.visible { display: flex; }
 
@@ -1071,13 +1072,19 @@ async function loadGallery() {
 
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
-  const { data: items } = await sb.from('gallery').select('*, players(name, emoji)')
-    .eq('game_id', gameId).order('round', { ascending: true });
+  const [{ data: items }, { data: commentRows }] = await Promise.all([
+    sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
+    sb.from('comments').select('gallery_item_id'),
+  ]);
 
   grid.innerHTML = '';
 
   if (!items?.length) { empty.style.display = ''; filterRow.innerHTML = ''; return; }
   empty.style.display = 'none';
+
+  // Build comment count map
+  const commentCounts = {};
+  (commentRows || []).forEach(r => { commentCounts[r.gallery_item_id] = (commentCounts[r.gallery_item_id] || 0) + 1; });
 
   // Build filter tabs
   const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => a-b);
@@ -1088,11 +1095,11 @@ async function loadGallery() {
     const btn = document.createElement('button');
     btn.className = 'filter-chip' + (galleryFilter == f.key ? ' active' : '');
     btn.textContent = f.label;
-    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items); updateFilterChips(filters); };
+    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items, commentCounts); updateFilterChips(filters); };
     filterRow.appendChild(btn);
   });
 
-  renderGalleryItems(items);
+  renderGalleryItems(items, commentCounts);
 }
 
 function updateFilterChips(filters) {
@@ -1101,7 +1108,7 @@ function updateFilterChips(filters) {
   });
 }
 
-function renderGalleryItems(items) {
+function renderGalleryItems(items, commentCounts = {}) {
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '';
 
@@ -1128,20 +1135,22 @@ function renderGalleryItems(items) {
       hdr.style.gridColumn = '1 / -1';
       hdr.textContent = key === 'bonus' ? '— Bonusbilder —' : '— Runda ' + key.slice(1) + ' —';
       grid.appendChild(hdr);
-      groupItems.forEach(item => grid.appendChild(buildGalleryItem(item)));
+      groupItems.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts)));
     });
   } else {
-    filtered.forEach(item => grid.appendChild(buildGalleryItem(item)));
+    filtered.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts)));
   }
 }
 
-function buildGalleryItem(item) {
+function buildGalleryItem(item, commentCounts = {}) {
   const d = document.createElement('div');
   d.className = 'gallery-item';
   const name = item.players?.name || '?';
   const emoji = item.players?.emoji || '';
   const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
-  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy"><div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
+  const cc = commentCounts[item.id] || 0;
+  const badge = cc > 0 ? `<div class="gallery-comment-badge">💬 ${cc}</div>` : '';
+  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy">${badge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
   d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id);
   return d;
 }
