@@ -489,6 +489,34 @@ let pendingPhoto  = null;
 let pickedChallenge = null;
 let selectedVoteFor = null;
 
+// ── Push notifications ─────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BLb7J2BKoCItFTDyVHQe9XABPP-tSURs3BDPsvYq38lnvbAxEmhYPx8dH2a273dNeuYGfvX6eiW1EFdWv5YOnM4';
+
+function urlB64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function registerPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/BigBoysBildBevis/sw.js');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const existing = await reg.pushManager.getSubscription();
+    const sub = existing || await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
+    await sb.from('push_subscriptions').upsert(
+      { player_id: myId, game_id: gameId, endpoint, p256dh, auth },
+      { onConflict: 'endpoint' }
+    );
+  } catch (e) { console.warn('Push setup failed:', e); }
+}
+
 function getOrCreateUUID() {
   let uuid = localStorage.getItem('my_uuid');
   if (!uuid) { uuid = crypto.randomUUID(); localStorage.setItem('my_uuid', uuid); }
@@ -555,6 +583,7 @@ async function navigateToPlayer(player) {
   localStorage.setItem('player_id', myId);
   localStorage.setItem('game_id',   gameId);
   await subscribeToGame();
+  registerPush();
   await renderByPhase(player.games);
 }
 
