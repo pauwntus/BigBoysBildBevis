@@ -865,9 +865,12 @@ async function confirmChallenge() {
       }
     }
     if (goranPlayerId) {
-      // Fire and forget — Göran submits asynchronously like a real player
       sb.functions.invoke('Goran-photo', {
         body: { game_id: gameId, player_id: goranPlayerId, round: newRound, challenge: pickedChallenge.text },
+      }).then(({ error, data }) => {
+        if (error) console.error('[Göran-photo] invoke error:', error);
+        else if (data?.error) console.error('[Göran-photo] function error:', data.error);
+        else console.log('[Göran-photo] ok', data);
       });
     }
   }
@@ -955,11 +958,14 @@ async function refreshSubProgress() {
   document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
   if (done >= total && total > 0) {
     setTimeout(async () => {
-      const { data: fresh } = await sb.from('games').select('*').eq('id', gameId).single();
+      const { data: fresh, error: fetchErr } = await sb.from('games').select('*').eq('id', gameId).single();
+      console.log('[sub] fresh fetch:', fresh?.phase, fetchErr);
       if (fresh?.phase === 'active') {
-        await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active');
+        const { data: upd, error: updErr } = await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active').select();
+        console.log('[sub] update result:', upd, updErr);
       }
-      const { data: latest } = await sb.from('games').select('*').eq('id', gameId).single();
+      const { data: latest, error: latestErr } = await sb.from('games').select('*').eq('id', gameId).single();
+      console.log('[sub] latest fetch:', latest?.phase, latestErr);
       if (latest?.phase === 'voting') await renderByPhase(latest);
     }, 800);
   }
