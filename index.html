@@ -868,9 +868,11 @@ async function confirmChallenge() {
     if (goranPlayerId) {
       sb.functions.invoke('Goran-photo', {
         body: { game_id: gameId, player_id: goranPlayerId, round: newRound, challenge: pickedChallenge.text },
-      }).then(({ error, data }) => {
-        if (error) console.error('[Göran-photo] invoke error:', error);
-        else if (data?.error) console.error('[Göran-photo] function error:', data.error);
+      }).then(async ({ error, data }) => {
+        if (error) {
+          const body = await error.context?.json?.().catch(() => null);
+          console.error('[Göran-photo] error:', body?.error || error.message);
+        } else if (data?.error) console.error('[Göran-photo] function error:', data.error);
         else console.log('[Göran-photo] ok', data);
       });
     }
