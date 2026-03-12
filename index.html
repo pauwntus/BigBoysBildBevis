@@ -866,7 +866,7 @@ async function confirmChallenge() {
     }
     if (goranPlayerId) {
       // Fire and forget — Göran submits asynchronously like a real player
-      sb.functions.invoke('goran-photo', {
+      sb.functions.invoke('Goran-photo', {
         body: { game_id: gameId, player_id: goranPlayerId, round: newRound, challenge: pickedChallenge.text },
       });
     }
