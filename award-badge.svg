@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 560">
+  <defs>
+    <style>
+      .r  { fill: #db1f26; }
+      .n1 { fill: #1f3364; }
+      .n2 { fill: #223b73; }
+    </style>
+    <clipPath id="c">
+      <path d="M250,34 L428,108 L450,240 L382,396 L250,504 L118,396 L50,240 L72,108 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- OUTER BADGE BORDER — tjock mörkblå kant -->
+  <path class="n1" d="M250,8 L448,86 L472,238 L400,408 L250,528 L100,408 L28,238 L52,86 Z"/>
+
+  <!-- INNER BADGE — klippt till emblemform -->
+  <g clip-path="url(#c)">
+
+    <!-- Marinblå bas -->
+    <rect class="n2" x="0" y="0" width="500" height="560"/>
+
+    <!-- Bergssilhuett i botten (bakom aperturen) -->
+    <path class="n1" d="M118,396 L140,372 L162,384 L186,356 L208,372 L230,355 L250,340 L270,355 L292,372 L314,356 L338,384 L360,372 L382,396 L250,504 Z"/>
+
+    <!-- Röd toppsektion — som ett skidtävlingsschema -->
+    <polygon class="r" points="250,34 428,108 428,148 72,148 72,108"/>
+
+    <!-- Stjärnstämpel — mörkblå 5-uddig stjärna på rött -->
+    <polygon class="n1" points="250,62 257,80 277,81 261,94 267,113 250,102 234,113 239,94 223,81 243,80"/>
+
+    <!-- Röd mittrand — bold horisontell stripe -->
+    <rect class="r" x="50" y="178" width="400" height="44"/>
+
+    <!-- Diagonala fartlinjer på randen — fem sneda mörka parallelogram -->
+    <polygon class="n1" points="75,178 95,178 127,222 107,222"/>
+    <polygon class="n1" points="155,178 175,178 207,222 187,222"/>
+    <polygon class="n1" points="235,178 255,178 287,222 267,222"/>
+    <polygon class="n1" points="315,178 335,178 367,222 347,222"/>
+    <polygon class="n1" points="395,178 415,178 447,222 427,222"/>
+
+    <!-- APERTUR — fyra nästlade åtthörningar, kameralinsens geometri -->
+    <!-- Yttre ring (n2 — lite ljusare mot n1-berget bakom) -->
+    <polygon class="n2" points="276,241 312,278 312,329 276,365 225,365 188,329 188,278 224,241"/>
+
+    <!-- Röd mittring -->
+    <polygon class="r" points="270,255 298,283 298,323 270,351 230,351 202,323 202,283 230,255"/>
+
+    <!-- Inre marinblå ring -->
+    <polygon class="n1" points="263,272 281,290 281,316 263,334 237,334 219,316 219,290 237,272"/>
+
+    <!-- Central röd apturen-punkt -->
+    <polygon class="r" points="256,288 265,297 265,309 256,318 244,318 235,309 235,297 244,288"/>
+
+  </g>
+</svg>

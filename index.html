@@ -9,11 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:     #0D1B2A;
-  --bg2:    #111F30;
-  --orange: #FF6B35;
-  --yellow: #FFE135;
-  --red:    #E63946;
+  --bg:     #0C1728;
+  --bg2:    #101F2E;
+  --orange: #db1f26;
+  --yellow: #FFFFFF;
+  --red:    #db1f26;
   --cream:  #F5F0E8;
   --muted:  #8A9BB0;
   --gold:   #FFD700;
@@ -33,7 +33,14 @@ body {
 body::before {
   content: '';
   position: fixed; inset: 0;
-  background-image: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.012) 40px, rgba(255,255,255,0.012) 80px);
+  background-image:
+    repeating-linear-gradient(
+      -52deg,
+      transparent 0px, transparent 68px,
+      rgba(31,51,100,0.1) 68px, rgba(31,51,100,0.1) 70px,
+      transparent 70px, transparent 106px,
+      rgba(31,51,100,0.06) 106px, rgba(31,51,100,0.06) 107px
+    );
   pointer-events: none; z-index: 0;
 }
 body::after {
@@ -61,7 +68,7 @@ body::after {
 .title-sub  { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 18px; text-transform: uppercase; letter-spacing: 3px; color: var(--orange); }
 h2 { font-family: 'Anton', sans-serif; font-size: 30px; color: var(--cream); }
 h3 { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
-.accent-line { height: 3px; background: linear-gradient(90deg, var(--orange), var(--yellow), var(--red)); margin: 10px 0 18px; }
+.accent-line { height: 3px; background: var(--orange); margin: 10px 0 18px; }
 
 /* ── Buttons ── */
 .btn {
@@ -70,10 +77,10 @@ h3 { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weigh
   border: none; padding: 16px 24px; cursor: pointer;
   clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
   transition: opacity 0.15s, transform 0.1s;
-  width: 100%; display: block; color: var(--bg); background: var(--orange);
+  width: 100%; display: block; color: var(--cream); background: var(--orange);
 }
 .btn:active { transform: scale(0.97); opacity: 0.9; }
-.btn-yellow { background: var(--yellow); }
+.btn-yellow { background: var(--yellow); color: var(--bg); }
 .btn-ghost  { background: transparent; border: 2px solid rgba(255,255,255,0.15); color: var(--muted); clip-path: none; }
 .btn-sm     { font-size: 14px; padding: 10px 16px; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
 .btn-inline { width: auto; display: inline-block; }
@@ -104,6 +111,7 @@ input::placeholder { color: var(--muted); }
 
 /* ── Screen header ── */
 .screen-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.screen-hdr h2 { border-left: 4px solid var(--orange); padding-left: 10px; }
 .game-code-big { font-family: 'Anton', sans-serif; font-size: 44px; letter-spacing: 8px; color: var(--yellow); line-height: 1; }
 .share-btn { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 2px 0; text-decoration: underline; }
 
@@ -115,7 +123,7 @@ input::placeholder { color: var(--muted); }
 .remove-btn { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
 
 /* ── Challenge card ── */
-.challenge-card { background: var(--bg2); border-top: 3px solid transparent; border-image: linear-gradient(90deg, var(--orange), var(--yellow)) 1; padding: 28px 20px; text-align: center; transition: transform 0.15s; }
+.challenge-card { background: var(--bg2); border-top: 3px solid var(--orange); padding: 28px 20px; text-align: center; transition: transform 0.15s; }
 .challenge-emoji { font-size: 52px; line-height: 1; margin-bottom: 12px; }
 .challenge-text  { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; color: var(--cream); }
 
@@ -126,7 +134,7 @@ input::placeholder { color: var(--muted); }
 
 /* ── Progress ── */
 .progress-bar  { height: 4px; background: rgba(255,255,255,0.08); }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--yellow)); transition: width 0.4s ease; }
+.progress-fill { height: 100%; background: var(--orange); transition: width 0.4s ease; }
 
 /* ── Voting grid ── */
 .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -154,10 +162,13 @@ input::placeholder { color: var(--muted); }
 .result-pts   { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 18px; color: var(--yellow); }
 
 /* ── Mountain ── */
-.mountain-bg { position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 0; opacity: 0.05; }
+.mountain-bg { position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 0; opacity: 1; }
+
+/* ── Brand swoosh background ── */
+.brand-swoosh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
 /* ── Bottom nav ── */
-#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 2px solid rgba(255,255,255,0.07); display: none; z-index: 100; max-width: 480px; margin: 0 auto; left: 50%; transform: translateX(-50%); width: 100%; }
+#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 3px solid var(--orange); display: none; z-index: 100; max-width: 480px; margin: 0 auto; left: 50%; transform: translateX(-50%); width: 100%; }
 #bottom-nav.visible { display: flex; }
 .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px 16px; background: none; border: none; border-top: 3px solid transparent; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; gap: 3px; transition: color 0.15s, border-color 0.15s; }
 .nav-tab.active { color: var(--orange); border-top-color: var(--orange); }
@@ -168,7 +179,7 @@ input::placeholder { color: var(--muted); }
 .gallery-screen-hdr { margin-bottom: 8px; }
 .gallery-filter-row { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
 .filter-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
-.filter-chip.active { background: var(--orange); border-color: var(--orange); color: var(--bg); }
+.filter-chip.active { background: var(--orange); border-color: var(--orange); color: var(--cream); }
 .gallery-round-hdr { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .gallery-item { position: relative; cursor: pointer; overflow: hidden; }
@@ -198,7 +209,7 @@ input::placeholder { color: var(--muted); }
 .lb-comment-text { flex: 1; line-height: 1.45; color: var(--cream); font-style: italic; }
 .lb-comment-input-row { display: flex; gap: 6px; margin-top: 10px; }
 .lb-comment-input-row input { flex: 1; font-size: 13px; padding: 8px 10px; }
-.lb-comment-input-row button { background: var(--orange); border: none; color: var(--bg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px; cursor: pointer; clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%); white-space: nowrap; }
+.lb-comment-input-row button { background: var(--orange); border: none; color: var(--cream); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px; cursor: pointer; clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%); white-space: nowrap; }
 
 /* ── Selecting overlay ── */
 #selecting-overlay { position: fixed; inset: 0; background: rgba(13,27,42,0.92); z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 40px; }
@@ -209,7 +220,7 @@ input::placeholder { color: var(--muted); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Toast ── */
-#toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--orange); color: var(--bg); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 20px; z-index: 400; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
+#toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--orange); color: var(--cream); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 20px; z-index: 400; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── Nav ── */
@@ -229,8 +240,27 @@ input::placeholder { color: var(--muted); }
 </head>
 <body>
 
+<!-- Brand diagonal swoosh — inspired by the ski slope lines in the BBBBSKI logo -->
+<svg class="brand-swoosh" viewBox="0 0 480 900" preserveAspectRatio="xMaxYMin slice" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wide primary navy swoosh -->
+  <path d="M-180,520 L480,-140 L560,-140 L-100,520 Z" fill="rgba(31,51,100,0.18)"/>
+  <!-- Second navy band -->
+  <path d="M-180,440 L480,-220 L520,-220 L-140,440 Z" fill="rgba(34,59,115,0.12)"/>
+  <!-- Thin navy band -->
+  <path d="M-180,380 L480,-280 L498,-280 L-162,380 Z" fill="rgba(34,59,115,0.08)"/>
+  <!-- Red speed line — the distinctive brand accent -->
+  <path d="M-180,330 L480,-330 L488,-330 L-172,330 Z" fill="rgba(219,31,38,0.3)"/>
+  <!-- Thin red echo line -->
+  <path d="M-180,300 L480,-360 L485,-360 L-175,300 Z" fill="rgba(219,31,38,0.14)"/>
+</svg>
+
 <svg class="mountain-bg" viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax meet">
-  <path d="M0,300 L0,200 L160,90 L300,160 L460,55 L600,130 L740,35 L880,110 L1040,45 L1190,100 L1340,25 L1440,80 L1440,300 Z" fill="var(--cream)"/>
+  <!-- Bakre bergskedja — subtil djupkänsla -->
+  <path d="M0,300 L0,230 L80,185 L180,215 L290,160 L390,195 L490,145 L580,175 L670,130 L760,160 L850,105 L940,145 L1030,118 L1120,152 L1220,98 L1320,142 L1400,88 L1440,110 L1440,300 Z" fill="rgba(20,36,72,0.2)"/>
+  <!-- Primär bergskedja — navy, inga röda toppar -->
+  <path d="M0,300 L0,200 L160,90 L300,160 L460,55 L600,130 L740,35 L880,110 L1040,45 L1190,100 L1340,25 L1440,80 L1440,300 Z" fill="rgba(31,51,100,0.3)"/>
+  <!-- Subtil röd toningsskugga längst uppe på berget — inte isolerade trianglar -->
+  <path d="M0,300 L0,200 L160,90 L300,160 L460,55 L600,130 L740,35 L880,110 L1040,45 L1190,100 L1340,25 L1440,80 L1440,130 L1340,75 L1190,150 L1040,95 L880,160 L740,85 L600,180 L460,105 L300,210 L160,140 L0,250 Z" fill="rgba(219,31,38,0.1)"/>
 </svg>
 
 <div id="toast"></div>
@@ -296,9 +326,16 @@ input::placeholder { color: var(--muted); }
 
 <!-- ══ HOME ══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
-  <div style="margin-top:48px; margin-bottom:32px;">
-    <div class="title-sub">Välkommen till</div>
-    <div class="title-huge" style="margin:4px 0 10px;">BIG BOYS<br>BILD-<br>BEVIS</div>
+  <div style="margin-top:36px; margin-bottom:32px;">
+    <!-- BBBBSKI logotyp — cream på mörk bakgrund -->
+    <img src="bbbbski-logo-dark.svg" alt="BBBBSKI" style="width:100%; max-width:320px; display:block; margin-bottom:20px; opacity:0.92;">
+    <!-- Horisontell röd speed line — exakt som i brand-logotypen -->
+    <div style="height:3px; background:var(--orange); margin-bottom:18px;"></div>
+    <!-- Titel med brand-hierarki: BIG BOYS cream + BILD-BEVIS red -->
+    <div class="title-huge" style="margin:0 0 2px;">BIG BOYS</div>
+    <div class="title-huge" style="color:var(--orange); margin:0 0 16px;">BILD-BEVIS</div>
+    <!-- Sub-label i EXECUTIVE OFFSITE-stil -->
+    <div style="font-family:'Barlow Condensed',sans-serif; font-style:italic; font-weight:900; font-size:11px; text-transform:uppercase; letter-spacing:4px; color:var(--muted); margin-bottom:16px;">— Winter Summit '26 —</div>
     <div class="accent-line"></div>
     <p class="text-muted">Vi fotar. Vi röstar. Vi levererar.</p>
   </div>
