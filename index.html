@@ -955,9 +955,12 @@ async function refreshSubProgress() {
   document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
   if (done >= total && total > 0) {
     setTimeout(async () => {
-      const { data: fresh } = await sb.from('games').select('phase').eq('id', gameId).single();
-      if (fresh?.phase === 'active')
+      const { data: fresh } = await sb.from('games').select('*').eq('id', gameId).single();
+      if (fresh?.phase === 'active') {
         await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active');
+      }
+      const { data: latest } = await sb.from('games').select('*').eq('id', gameId).single();
+      if (latest?.phase === 'voting') await renderByPhase(latest);
     }, 800);
   }
 }
@@ -1055,12 +1058,14 @@ async function refreshVoteProgress() {
   document.getElementById('vote-count').textContent = `${done} / ${total} har röstat` + (goranVoted ? ' · Göran ✓' : ' · Göran röstar…');
   if (done >= total && total > 0) {
     setTimeout(async () => {
-      const { data: fresh } = await sb.from('games').select('phase').eq('id', gameId).single();
+      const { data: fresh } = await sb.from('games').select('*').eq('id', gameId).single();
       if (fresh?.phase === 'voting') {
         const { data: updated } = await sb.from('games')
           .update({ phase: 'results' }).eq('id', gameId).eq('phase', 'voting').select();
         if (updated?.length > 0) await tallyRound(round);
       }
+      const { data: latest } = await sb.from('games').select('*').eq('id', gameId).single();
+      if (latest?.phase === 'results') await renderByPhase(latest);
     }, 800);
   }
 }
