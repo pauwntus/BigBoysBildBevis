@@ -943,11 +943,14 @@ async function submitPhoto() {
 
 async function refreshSubProgress() {
   const round = currentGame?.current_round; if (!round) return;
+  const goranPid = currentGame?.goran_player_id;
   const [{ data: subs }, { data: players }] = await Promise.all([
     sb.from('submissions').select('player_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
-  const done = subs?.length || 0, total = players?.length || 0;
+  const humanPlayers = (players || []).filter(p => p.id !== goranPid);
+  const humanSubs = (subs || []).filter(s => s.player_id !== goranPid);
+  const done = humanSubs.length, total = humanPlayers.length;
   document.getElementById('sub-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
   if (done >= total && total > 0) {
@@ -1044,8 +1047,10 @@ async function refreshVoteProgress() {
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
   ]);
+  const goranPid = currentGame?.goran_player_id;
   const goranVoted = (votes || []).some(v => v.voter_id === GORAN_VOTER_ID);
-  const done = (votes || []).filter(v => v.voter_id !== GORAN_VOTER_ID).length, total = players?.length || 0;
+  const humanPlayers = (players || []).filter(p => p.id !== goranPid);
+  const done = (votes || []).filter(v => v.voter_id !== GORAN_VOTER_ID).length, total = humanPlayers.length;
   document.getElementById('vote-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
   document.getElementById('vote-count').textContent = `${done} / ${total} har röstat` + (goranVoted ? ' · Göran ✓' : ' · Göran röstar…');
   if (done >= total && total > 0) {
