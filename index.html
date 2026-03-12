@@ -984,7 +984,7 @@ async function renderVoting(game) {
     const { data: goranVoted } = await sb.from('votes').select('id').eq('game_id', gameId).eq('voter_id', GORAN_VOTER_ID).eq('round', game.current_round).maybeSingle();
     if (!goranVoted) {
       const pick = subs[Math.floor(Math.random() * subs.length)];
-      await sb.from('votes').insert({ game_id: gameId, voter_id: GORAN_VOTER_ID, voted_for_id: pick.player_id, round: game.current_round });
+      await sb.from('votes').upsert({ game_id: gameId, voter_id: GORAN_VOTER_ID, voted_for_id: pick.player_id, round: game.current_round }, { onConflict: 'game_id,voter_id,round' });
     }
   }
   const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
