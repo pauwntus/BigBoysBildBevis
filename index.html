@@ -368,7 +368,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v0.4</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v0.5</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -870,8 +870,9 @@ async function confirmChallenge() {
         body: { game_id: gameId, player_id: goranPlayerId, round: newRound, challenge: pickedChallenge.text },
       }).then(async ({ error, data }) => {
         if (error) {
-          const body = await error.context?.json?.().catch(() => null);
-          console.error('[Göran-photo] error:', body?.error || error.message);
+          let msg = error.message;
+          try { msg = await error.context.text(); } catch (_) {}
+          console.error('[Göran-photo] error:', msg);
         } else if (data?.error) console.error('[Göran-photo] function error:', data.error);
         else console.log('[Göran-photo] ok', data);
       });
