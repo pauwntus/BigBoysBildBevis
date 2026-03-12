@@ -1138,7 +1138,7 @@ async function loadGallery() {
 
   const [{ data: items }, { data: commentRows }] = await Promise.all([
     sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
-    sb.from('comments').select('gallery_item_id'),
+    sb.from('comments').select('gallery_item_id, is_goran'),
   ]);
 
   grid.innerHTML = '';
@@ -1146,9 +1146,13 @@ async function loadGallery() {
   if (!items?.length) { empty.style.display = ''; filterRow.innerHTML = ''; return; }
   empty.style.display = 'none';
 
-  // Build comment count map
+  // Build comment count map and track which items already have a Göran comment
   const commentCounts = {};
-  (commentRows || []).forEach(r => { commentCounts[r.gallery_item_id] = (commentCounts[r.gallery_item_id] || 0) + 1; });
+  const goranCommentedIds = new Set();
+  (commentRows || []).forEach(r => {
+    commentCounts[r.gallery_item_id] = (commentCounts[r.gallery_item_id] || 0) + 1;
+    if (r.is_goran) goranCommentedIds.add(r.gallery_item_id);
+  });
 
   // Build filter tabs
   const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => a-b);
@@ -1164,6 +1168,13 @@ async function loadGallery() {
   });
 
   renderGalleryItems(items, commentCounts);
+
+  // Silently trigger Göran to comment on any photos he hasn't seen yet
+  items.forEach(item => {
+    if (!goranCommentedIds.has(item.id) && item.photo) {
+      triggerGoranComment(item.id, item.photo, item.challenge || null);
+    }
+  });
 }
 
 function updateFilterChips(filters) {
