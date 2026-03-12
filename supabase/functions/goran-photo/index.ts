@@ -27,8 +27,10 @@ Deno.serve(async (req) => {
     // ── Step 1: Fetch Göran reference image ──────────────────────────────
     const imgRes = await fetch(GORAN_IMAGE_URL);
     if (!imgRes.ok) throw new Error("Could not fetch Göran reference image");
-    const imgBytes = await imgRes.arrayBuffer();
-    const imgB64 = btoa(String.fromCharCode(...new Uint8Array(imgBytes)));
+    const imgBytes = new Uint8Array(await imgRes.arrayBuffer());
+    let imgBinary = '';
+    for (let i = 0; i < imgBytes.byteLength; i++) imgBinary += String.fromCharCode(imgBytes[i]);
+    const imgB64 = btoa(imgBinary);
     const imgMime = imgRes.headers.get("content-type") || "image/jpeg";
 
     // ── Step 2: GPT-4o decides if Göran should appear + writes the prompt ─
