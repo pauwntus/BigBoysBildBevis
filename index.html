@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Big Boys BildBevis</title>
+<link rel="manifest" href="/BigBoysBildBevis/manifest.json">
+<meta name="theme-color" content="#db1f26">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BildBevis">
+<link rel="apple-touch-icon" href="https://pauwntus.github.io/BigBoysBildBevis/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@1,900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -344,6 +351,9 @@ input::placeholder { color: var(--muted); }
         onkeydown="if(event.key==='Enter') continueFromHome()">
     </div>
     <button class="btn" onclick="continueFromHome()">Fortsätt →</button>
+    <button class="btn btn-yellow" id="pwa-install-btn" onclick="installPWA()" style="display:none;">
+      Installera app ↓
+    </button>
   </div>
 </div>
 
@@ -1407,6 +1417,26 @@ function toast(msg) {
 }
 
 init();
+
+// ── PWA Install ────────────────────────────────────────
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'block';
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'none';
+});
+async function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') deferredInstallPrompt = null;
+}
 </script>
 </body>
 </html>
