@@ -1,6 +1,6 @@
 ---
 name: supabase-check
-description: Checks if recent code changes require updates to Supabase — Edge Functions, database schema, environment variables, or RLS policies. Use this after implementing new features or when the user asks about Supabase deployment.
+description: Checks if recent code changes require updates to Supabase — Edge Functions, database schema, environment variables, or RLS policies. Run this AUTOMATICALLY after every implementation involving new features, database queries, Edge Functions, or push notifications. Do not wait for the user to ask.
 triggers:
   - /supabase-check
 ---
