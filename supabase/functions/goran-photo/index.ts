@@ -28,14 +28,12 @@ Deno.serve(async (req) => {
     const imgRes = await fetch(GORAN_IMAGE_URL);
     if (!imgRes.ok) throw new Error("Could not fetch Göran reference image");
     const imgBytes = new Uint8Array(await imgRes.arrayBuffer());
+    const imgMime = imgRes.headers.get("content-type") || "image/jpeg";
     let imgBinary = '';
     for (let i = 0; i < imgBytes.byteLength; i++) imgBinary += String.fromCharCode(imgBytes[i]);
     const imgB64 = btoa(imgBinary);
-    const imgMime = imgRes.headers.get("content-type") || "image/jpeg";
 
     // ── Step 2: GPT-4o decides if Göran should appear + writes the prompt ─
-    // It sees the reference photo and the challenge, and decides intelligently
-    // whether the challenge calls for a person in the shot or just a scene.
     const decisionRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: authHeaders,
@@ -53,8 +51,9 @@ Deno.serve(async (req) => {
               `Your job is to decide: should Göran personally appear in the photo for this challenge, or should the photo just show the scene/subject? ` +
               `Include Göran if the challenge implies a selfie, a portrait, a person doing something, or human presence. ` +
               `Exclude Göran (scene only) if the challenge is about an object, a landscape, food, signage, or something where a person would be incidental. ` +
-              `Then write a DALL-E 3 image prompt for the photo. ` +
-              `When including Göran, describe him in full detail from the reference image so DALL-E recreates his look faithfully. ` +
+              `Then write an image generation prompt for the photo. ` +
+              `When including Göran, keep the prompt short and focused — the reference image will be passed directly to the model. Just describe the scene and action, not his appearance. ` +
+              `When excluding Göran, describe just the scene/subject vividly. ` +
               `Always make the photo look like a candid amateur phone shot from a ski trip — slightly imperfect composition, natural light. ` +
               `Respond with JSON: { "include_goran": boolean, "reason": string, "dalle_prompt": string }`,
           },
@@ -82,29 +81,58 @@ Deno.serve(async (req) => {
 
     const decisionData = await decisionRes.json();
     const decision = JSON.parse(decisionData.choices[0].message.content);
-    const dallePrompt: string = decision.dalle_prompt;
+    const imagePrompt: string = decision.dalle_prompt;
 
-    // ── Step 3: DALL-E 3 generates the actual photo ───────────────────────
-    const genRes = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: dallePrompt,
-        n: 1,
-        size: "1024x1024",
-        response_format: "b64_json",
-      }),
-    });
+    // ── Step 3: Generate image ─────────────────────────────────────────────
+    // If Göran should appear, send the reference image directly to gpt-image-1
+    // via the edits endpoint for consistent likeness.
+    // If scene only, use gpt-image-1 generations (text-only).
+    let b64: string;
 
-    if (!genRes.ok) {
-      const err = await genRes.text();
-      throw new Error(`DALL-E error: ${err}`);
+    if (decision.include_goran) {
+      const imgBlob = new Blob([imgBytes], { type: imgMime });
+      const formData = new FormData();
+      formData.append("image[]", imgBlob, "goran.jpg");
+      formData.append("prompt", imagePrompt);
+      formData.append("model", "gpt-image-1");
+      formData.append("n", "1");
+      formData.append("size", "1024x1024");
+
+      const genRes = await fetch("https://api.openai.com/v1/images/edits", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+        body: formData,
+      });
+
+      if (!genRes.ok) {
+        const err = await genRes.text();
+        throw new Error(`gpt-image-1 edits error: ${err}`);
+      }
+
+      const genData = await genRes.json();
+      b64 = genData.data?.[0]?.b64_json;
+      if (!b64) throw new Error("No image returned from gpt-image-1 edits");
+    } else {
+      const genRes = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt: imagePrompt,
+          n: 1,
+          size: "1024x1024",
+        }),
+      });
+
+      if (!genRes.ok) {
+        const err = await genRes.text();
+        throw new Error(`gpt-image-1 generations error: ${err}`);
+      }
+
+      const genData = await genRes.json();
+      b64 = genData.data?.[0]?.b64_json;
+      if (!b64) throw new Error("No image returned from gpt-image-1 generations");
     }
-
-    const genData = await genRes.json();
-    const b64 = genData.data?.[0]?.b64_json;
-    if (!b64) throw new Error("No image returned from DALL-E");
 
     const photo = `data:image/png;base64,${b64}`;
 
