@@ -22,7 +22,7 @@ create or replace function notify_phase_change()
 returns trigger as $$
 begin
   if NEW.phase is distinct from OLD.phase
-     and NEW.phase in ('voting', 'challenge') then
+     and NEW.phase in ('voting', 'active', 'results') then
     perform net.http_post(
       url     := 'https://qfopolrxfnilhxzknmkl.supabase.co/functions/v1/send-push',
       body    := jsonb_build_object('game_id', NEW.id, 'phase', NEW.phase),
