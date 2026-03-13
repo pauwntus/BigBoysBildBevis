@@ -10,6 +10,7 @@ const VAPID_PUBLIC = "BLb7J2BKoCItFTDyVHQe9XABPP-tSURs3BDPsvYq38lnvbAxEmhYPx8dH2
 
 const MESSAGES: Record<string, { title: string; body: string }> = {
   voting:    { title: "🗳️ Dags att rösta!", body: "Alla har skickat in – gå in och rösta nu!" },
+  active:    { title: "📸 Ny utmaning!", body: "En ny fotoutmaning väntar. Kolla in den!" },
   challenge: { title: "📸 Ny utmaning!", body: "En ny fotoutmaning väntar. Kolla in den!" },
   results:   { title: "🏆 Röstningen är klar!", body: "Kolla in resultatet – vem vann?" },
 };
