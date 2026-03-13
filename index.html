@@ -394,7 +394,8 @@ input::placeholder { color: var(--muted); }
   <button class="btn" style="margin-bottom:20px;" onclick="initStartChallenge()">Starta utmaning</button>
   <h3 style="margin-bottom:10px;">Spelare</h3>
   <div id="lobby-players" class="stack-sm"></div>
-  <div class="text-center" style="padding-top:24px; margin-top:auto;">
+  <div class="text-center" style="padding-top:24px; margin-top:auto; display:flex; flex-direction:column; gap:12px; align-items:center;">
+    <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="display:none;">🔔 Aktivera notiser</button>
     <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
   </div>
 </div>
@@ -542,6 +543,18 @@ function urlB64ToUint8Array(b64) {
   const pad = '='.repeat((4 - b64.length % 4) % 4);
   const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  btn.style.display = (supported && Notification.permission !== 'granted') ? 'inline-block' : 'none';
+}
+
+async function enableNotifications() {
+  await registerPush();
+  updateNotifBtn();
 }
 
 async function registerPush() {
@@ -711,6 +724,20 @@ async function subscribeToGame() {
     .subscribe();
 }
 
+async function rehydrate() {
+  if (!gameId) return;
+  await subscribeToGame();
+  const { data: game } = await sb.from('games').select('*').eq('id', gameId).single();
+  if (game) { currentGame = game; await renderByPhase(game); }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') rehydrate();
+});
+window.addEventListener('pageshow', e => {
+  if (e.persisted) rehydrate();
+});
+
 function activeScreen() { return document.querySelector('.screen.active')?.id; }
 
 // ── Create ────────────────────────────────────────────
@@ -780,6 +807,7 @@ function shareLink() {
 
 // ── Lobby ─────────────────────────────────────────────
 async function renderLobby() {
+  updateNotifBtn();
   document.getElementById('lobby-code').textContent = gameCode || '----';
   const { data: players } = await sb.from('players').select('*')
     .eq('game_id', gameId).order('score', { ascending: false });
