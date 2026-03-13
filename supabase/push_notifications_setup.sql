@@ -11,7 +11,13 @@ create table if not exists push_subscriptions (
 );
 
 alter table push_subscriptions enable row level security;
-create policy "allow all" on push_subscriptions for all using (true) with check (true);
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'push_subscriptions' and policyname = 'allow all'
+  ) then
+    execute 'create policy "allow all" on push_subscriptions for all using (true) with check (true)';
+  end if;
+end $$;
 
 
 -- ── 2. Databas-trigger: skicka push när fas ändras ──────
