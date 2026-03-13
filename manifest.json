@@ -1,0 +1,25 @@
+{
+  "name": "Big Boys BildBevis",
+  "short_name": "BildBevis",
+  "description": "Vi fotar. Vi röstar. Vi levererar.",
+  "start_url": "/BigBoysBildBevis/",
+  "scope": "/BigBoysBildBevis/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0C1728",
+  "theme_color": "#db1f26",
+  "icons": [
+    {
+      "src": "https://pauwntus.github.io/BigBoysBildBevis/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://pauwntus.github.io/BigBoysBildBevis/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
