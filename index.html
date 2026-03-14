@@ -578,7 +578,11 @@ async function registerPush() {
       userVisibleOnly: true,
       applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
     });
-    const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
+    const endpoint = sub.endpoint;
+    const p256dhRaw = sub.getKey('p256dh');
+    const authRaw   = sub.getKey('auth');
+    const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhRaw)));
+    const auth   = btoa(String.fromCharCode(...new Uint8Array(authRaw)));
     await sb.from('push_subscriptions').upsert(
       { player_id: myId, game_id: gameId, endpoint, p256dh, auth },
       { onConflict: 'endpoint' }
