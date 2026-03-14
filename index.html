@@ -1288,10 +1288,10 @@ async function loadGallery() {
   }
 
   // Build filter tabs
-  const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => a-b);
+  const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => b-a);
   const hasBonus = items.some(i => !i.round);
   filterRow.innerHTML = '';
-  const filters = [{ key: 'all', label: 'Alla' }, ...rounds.map(r => ({ key: r, label: 'Rnd ' + r })), ...(hasBonus ? [{ key: 'bonus', label: 'Bonus' }] : [])];
+  const filters = [{ key: 'all', label: 'Alla' }, ...(hasBonus ? [{ key: 'bonus', label: 'Bonus' }] : []), ...rounds.map(r => ({ key: r, label: 'Rnd ' + r }))];
   filters.forEach(f => {
     const btn = document.createElement('button');
     btn.className = 'filter-chip' + (galleryFilter == f.key ? ' active' : '');
@@ -1337,7 +1337,9 @@ function renderGalleryItems(items, commentCounts = {}, roundMeta = {}, pointsMap
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     });
-    Object.entries(groups).forEach(([key, groupItems]) => {
+    const sortedKeys = Object.keys(groups).filter(k => k !== 'bonus').sort((a, b) => Number(b.slice(1)) - Number(a.slice(1)));
+    if (groups['bonus']) sortedKeys.push('bonus');
+    sortedKeys.forEach(key => { const groupItems = groups[key];
       const hdr = document.createElement('div');
       hdr.className = 'gallery-round-hdr';
       hdr.style.gridColumn = '1 / -1';
