@@ -49,4 +49,4 @@ create trigger on_phase_change
 
 
 -- ── 3. Supabase secrets att sätta via CLI eller Dashboard ──
--- supabase secrets set VAPID_PRIVATE_KEY=S4_hENzBsmEjP98cYxDZ4a8sXiLCpQRAaN_-BpWFt0g
+-- supabase secrets set VAPID_PRIVATE_KEY=<din-privata-nyckel>

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VAPID_PUBLIC = "BLb7J2BKoCItFTDyVHQe9XABPP-tSURs3BDPsvYq38lnvbAxEmhYPx8dH2a273dNeuYGfvX6eiW1EFdWv5YOnM4";
+const VAPID_PUBLIC = "BAARI6S69neZkeZ1Pr5hUHHFse7UmwAyY36tjeT9j9Qcq9Qq4rorsubBPXF4OLbQqjtzyAXgjfKC4P1G8ZS84P0";
 
 const MESSAGES: Record<string, { title: string; body: string }> = {
   voting:    { title: "🗳️ Dags att rösta!", body: "Alla har skickat in – gå in och rösta nu!" },

@@ -378,7 +378,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.0</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.1</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -537,13 +537,13 @@ let pickedChallenge = null;
 let selectedVoteFor = null;
 
 // ── Push notifications ─────────────────────────────────
-const VAPID_PUBLIC_KEY = 'BLb7J2BKoCItFTDyVHQe9XABPP-tSURs3BDPsvYq38lnvbAxEmhYPx8dH2a273dNeuYGfvX6eiW1EFdWv5YOnM4';
+const VAPID_PUBLIC_KEY = 'BAARI6S69neZkeZ1Pr5hUHHFse7UmwAyY36tjeT9j9Qcq9Qq4rorsubBPXF4OLbQqjtzyAXgjfKC4P1G8ZS84P0';
 
 async function triggerPush(phase) {
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
       body: JSON.stringify({ game_id: gameId, phase }),
     });
   } catch (e) { console.warn('Push trigger failed:', e); }
