@@ -33,8 +33,7 @@ begin
       url     := 'https://qfopolrxfnilhxzknmkl.supabase.co/functions/v1/send-push',
       body    := jsonb_build_object('game_id', NEW.id, 'phase', NEW.phase),
       headers := jsonb_build_object(
-        'Content-Type',  'application/json',
-        'Authorization', 'Bearer sb_publishable_G1axvniFKDW0xQt94bhLYQ_CImljqte'
+        'Content-Type', 'application/json'
       )
     );
   end if;
