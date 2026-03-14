@@ -383,7 +383,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.5</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.6</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -538,6 +538,8 @@ let gameId        = null;
 let gameCode      = null;
 let currentGame   = null;
 let realtimeCh    = null;
+let _subProgressBusy  = false;
+let _voteProgressBusy = false;
 let pendingPhoto  = null;
 let pickedChallenge = null;
 let selectedVoteFor = null;
@@ -1029,7 +1031,9 @@ async function submitPhoto() {
 }
 
 async function refreshSubProgress() {
-  const round = currentGame?.current_round; if (!round) return;
+  if (_subProgressBusy) return; _subProgressBusy = true;
+  try {
+  const round = currentGame?.current_round; if (!round) { _subProgressBusy = false; return; }
   const goranPid = currentGame?.goran_player_id;
   const [{ data: subs }, { data: players }] = await Promise.all([
     sb.from('submissions').select('player_id').eq('game_id', gameId).eq('round', round),
@@ -1042,18 +1046,15 @@ async function refreshSubProgress() {
   document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
   if (done >= total && total > 0) {
     setTimeout(async () => {
-      const { data: fresh, error: fetchErr } = await sb.from('games').select('*').eq('id', gameId).single();
-      console.log('[sub] fresh fetch:', fresh?.phase, fetchErr);
+      const { data: fresh } = await sb.from('games').select('*').eq('id', gameId).single();
       if (fresh?.phase === 'active') {
-        const { data: upd, error: updErr } = await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active').select();
-        console.log('[sub] update result:', upd, updErr);
-        if (upd?.length) { triggerPush('voting'); triggerEmail('voting'); }
+        const { data: upd } = await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active').select();
+        if (upd?.length) { triggerPush('voting'); triggerEmail('voting'); await renderByPhase(upd[0]); return; }
       }
-      const { data: latest, error: latestErr } = await sb.from('games').select('*').eq('id', gameId).single();
-      console.log('[sub] latest fetch:', latest?.phase, latestErr);
-      if (latest?.phase === 'voting') await renderByPhase(latest);
+      if (fresh?.phase === 'voting') await renderByPhase(fresh);
     }, 800);
   }
+  } finally { _subProgressBusy = false; }
 }
 
 // ── Voting ────────────────────────────────────────────
@@ -1136,7 +1137,9 @@ function showVoteWaiting() {
 }
 
 async function refreshVoteProgress() {
-  const round = currentGame?.current_round; if (!round) return;
+  if (_voteProgressBusy) return; _voteProgressBusy = true;
+  try {
+  const round = currentGame?.current_round; if (!round) { _voteProgressBusy = false; return; }
   const [{ data: votes }, { data: players }] = await Promise.all([
     sb.from('votes').select('voter_id').eq('game_id', gameId).eq('round', round),
     sb.from('players').select('id').eq('game_id', gameId),
@@ -1153,12 +1156,12 @@ async function refreshVoteProgress() {
       if (fresh?.phase === 'voting') {
         const { data: updated } = await sb.from('games')
           .update({ phase: 'results' }).eq('id', gameId).eq('phase', 'voting').select();
-        if (updated?.length > 0) { triggerPush('results'); triggerEmail('results'); await tallyRound(round); }
+        if (updated?.length > 0) { triggerPush('results'); triggerEmail('results'); await tallyRound(round); await renderByPhase(updated[0]); return; }
       }
-      const { data: latest } = await sb.from('games').select('*').eq('id', gameId).single();
-      if (latest?.phase === 'results') await renderByPhase(latest);
+      if (fresh?.phase === 'results') await renderByPhase(fresh);
     }, 800);
   }
+  } finally { _voteProgressBusy = false; }
 }
 
 async function tallyRound(round) {
@@ -1167,14 +1170,19 @@ async function tallyRound(round) {
   (votes || []).forEach(v => { counts[v.voted_for_id] = (counts[v.voted_for_id] || 0) + 1; });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const PTS = [3, 2, 1]; let lastCount = -1, rankIdx = 0;
+  const updates = [];
   for (let i = 0; i < sorted.length; i++) {
     const [pid, cnt] = sorted[i];
     if (cnt !== lastCount) { rankIdx = i; lastCount = cnt; }
     const pts = PTS[rankIdx] || 0;
-    if (pts > 0) {
-      const { data: p } = await sb.from('players').select('score').eq('id', pid).single();
-      await sb.from('players').update({ score: (p?.score || 0) + pts }).eq('id', pid);
-    }
+    if (pts > 0) updates.push({ pid, pts });
+  }
+  if (updates.length > 0) {
+    const { data: playerScores } = await sb.from('players').select('id, score').in('id', updates.map(u => u.pid));
+    const scoreMap = Object.fromEntries((playerScores || []).map(p => [p.id, p.score || 0]));
+    await Promise.all(updates.map(({ pid, pts }) =>
+      sb.from('players').update({ score: scoreMap[pid] + pts }).eq('id', pid)
+    ));
   }
   const { data: alreadyIn } = await sb.from('gallery').select('id').eq('game_id', gameId).eq('round', round).limit(1);
   if (!alreadyIn?.length) {
@@ -1258,10 +1266,11 @@ async function loadGallery() {
 
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
-  const [{ data: items }, { data: commentRows }] = await Promise.all([
-    sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
-    sb.from('comments').select('gallery_item_id, is_goran'),
-  ]);
+  const { data: items } = await sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true });
+  const itemIds = (items || []).map(g => g.id);
+  const { data: commentRows } = itemIds.length
+    ? await sb.from('comments').select('gallery_item_id, is_goran').in('gallery_item_id', itemIds)
+    : { data: [] };
 
   grid.innerHTML = '';
 
