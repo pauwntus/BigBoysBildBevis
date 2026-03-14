@@ -1266,10 +1266,11 @@ async function loadGallery() {
 
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
-  const [{ data: items }, { data: commentRows }] = await Promise.all([
-    sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
-    sb.from('comments').select('gallery_item_id, is_goran'),
-  ]);
+  const { data: items } = await sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true });
+  const itemIds = (items || []).map(g => g.id);
+  const { data: commentRows } = itemIds.length
+    ? await sb.from('comments').select('gallery_item_id, is_goran').in('gallery_item_id', itemIds)
+    : { data: [] };
 
   grid.innerHTML = '';
 
