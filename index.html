@@ -546,6 +546,8 @@ let realtimeCh    = null;
 let _subProgressBusy  = false;
 let _voteProgressBusy = false;
 let pendingPhoto  = null;
+let pendingThumb  = null;
+const galleryFullCache = {}; // { [item.id]: base64 full-res photo }
 let pickedChallenge = null;
 let selectedVoteFor = null;
 
@@ -957,6 +959,11 @@ function handleFileUpload(e) {
       const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
       pendingPhoto = cv.toDataURL('image/jpeg', 0.92);
+      const THUMB = 400; let tw = w, th = h;
+      if (tw > th && tw > THUMB) { th = th * THUMB / tw; tw = THUMB; } else if (th > THUMB) { tw = tw * THUMB / th; th = THUMB; }
+      const tcv = document.createElement('canvas'); tcv.width = tw; tcv.height = th;
+      tcv.getContext('2d').drawImage(cv, 0, 0, tw, th);
+      pendingThumb = tcv.toDataURL('image/jpeg', 0.72);
       document.getElementById('preview-img').src = pendingPhoto;
       showZone('preview');
     };
@@ -965,14 +972,14 @@ function handleFileUpload(e) {
   reader.readAsDataURL(file);
 }
 
-function resetPreview() { pendingPhoto = null; showZone('upload'); }
-function changePhoto()  { pendingPhoto = null; showZone('upload'); document.getElementById('file-input').click(); }
+function resetPreview() { pendingPhoto = null; pendingThumb = null; showZone('upload'); }
+function changePhoto()  { pendingPhoto = null; pendingThumb = null; showZone('upload'); document.getElementById('file-input').click(); }
 
 async function submitPhoto() {
   if (!pendingPhoto) return;
   setLoading('submit-btn', true, 'Skickar...');
   const { error } = await sb.from('submissions').upsert({
-    game_id: gameId, player_id: myId, round: currentGame.current_round, photo: pendingPhoto,
+    game_id: gameId, player_id: myId, round: currentGame.current_round, photo: pendingPhoto, thumbnail: pendingThumb,
   }, { onConflict: 'game_id,player_id,round' });
   if (error) { setLoading('submit-btn', false, 'Skicka in'); return toast('Fel: ' + error.message); }
   setLoading('submit-btn', false, 'Skicka in');
@@ -1137,7 +1144,7 @@ async function tallyRound(round) {
   if (!alreadyIn?.length) {
     const { data: finalSubs } = await sb.from('submissions').select('*').eq('game_id', gameId).eq('round', round);
     if (finalSubs?.length) {
-      const { error: galleryErr } = await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round, challenge: currentGame?.current_challenge || null })));
+      const { error: galleryErr } = await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, thumbnail: s.thumbnail || null, round, challenge: currentGame?.current_challenge || null })));
       if (galleryErr) console.error('Gallery insert failed:', galleryErr.message);
     }
   }
@@ -1303,18 +1310,20 @@ async function loadGallery() {
 
   renderGalleryItems(items, commentCounts, galleryRoundMeta, pointsMap);
 
-  // Load photos in background and fill in images as they arrive
+  // Load thumbnails in background and fill in images as they arrive
   if (itemIds.length) {
-    sb.from('gallery').select('id, photo').in('id', itemIds).then(({ data: photos }) => {
+    sb.from('gallery').select('id, thumbnail, photo').in('id', itemIds).then(({ data: photos }) => {
       (photos || []).forEach(p => {
-        galleryPhotoCache[p.id] = p.photo;
+        const src = p.thumbnail || p.photo; // fallback for old rows without thumbnail
+        galleryPhotoCache[p.id] = src;
+        if (p.photo) galleryFullCache[p.id] = p.photo;
         const img = document.querySelector(`.gallery-item img[data-item-id="${p.id}"]`);
-        if (img) img.src = p.photo;
+        if (img) img.src = src;
       });
       // Trigger Göran comments after photos are available
       items.forEach(item => {
-        if (!goranCommentedIds.has(item.id) && galleryPhotoCache[item.id]) {
-          triggerGoranComment(item.id, galleryPhotoCache[item.id], item.challenge || null);
+        if (!goranCommentedIds.has(item.id) && galleryFullCache[item.id]) {
+          triggerGoranComment(item.id, galleryFullCache[item.id], item.challenge || null);
         }
       });
     });
@@ -1385,7 +1394,7 @@ function buildGalleryItem(item, commentCounts = {}, pointsMap = {}) {
   const cachedSrc = galleryPhotoCache[item.id] || '';
   d.innerHTML = `<img src="${cachedSrc}" data-item-id="${item.id}" alt="" style="min-height:80px;background:#111;">${commentBadge}${ptsBadge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
   d.onclick = async () => {
-    const photo = galleryPhotoCache[item.id] || await sb.from('gallery').select('photo').eq('id', item.id).single().then(r => { if (r.data?.photo) galleryPhotoCache[item.id] = r.data.photo; return r.data?.photo || ''; });
+    const photo = galleryFullCache[item.id] || await sb.from('gallery').select('photo').eq('id', item.id).single().then(r => { if (r.data?.photo) galleryFullCache[item.id] = r.data.photo; return r.data?.photo || ''; });
     openLightbox(photo, emoji + ' ' + name, tag, item.id, item.player_id, item.challenge);
   };
   return d;
@@ -1501,7 +1510,12 @@ async function uploadBonusPhoto(e) {
       if (w > h && w > MAX) { h = h * MAX / w; w = MAX; } else if (h > MAX) { w = w * MAX / h; h = MAX; }
       const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
-      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.92), round: null });
+      const THUMB = 400; let tw = w, th = h;
+      if (tw > th && tw > THUMB) { th = th * THUMB / tw; tw = THUMB; } else if (th > THUMB) { tw = tw * THUMB / th; th = THUMB; }
+      const tcv = document.createElement('canvas'); tcv.width = tw; tcv.height = th;
+      tcv.getContext('2d').drawImage(cv, 0, 0, tw, th);
+      const thumb = tcv.toDataURL('image/jpeg', 0.72);
+      const { error } = await sb.from('gallery').insert({ game_id: gameId, player_id: myId, photo: cv.toDataURL('image/jpeg', 0.92), thumbnail: thumb, round: null });
       if (error) return toast('Kunde inte ladda upp');
       toast('Bild uppladdad!');
       if (activeScreen() === 'screen-gallery') await loadGallery();
