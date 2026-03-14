@@ -350,6 +350,11 @@ input::placeholder { color: var(--muted); }
       <input type="text" id="home-name" placeholder="Namn" maxlength="20" autocomplete="off"
         onkeydown="if(event.key==='Enter') continueFromHome()">
     </div>
+    <div>
+      <label class="label">E-post <span style="font-weight:400;opacity:0.5;">(valfritt – för notiser)</span></label>
+      <input type="email" id="home-email" placeholder="din@email.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter') continueFromHome()">
+    </div>
     <button class="btn" onclick="continueFromHome()">Fortsätt →</button>
     <button class="btn btn-yellow" id="pwa-install-btn" onclick="installPWA()" style="display:none;">
       Installera app ↓
@@ -528,6 +533,7 @@ const GORAN_VOTER_ID = '00000000-0000-0000-0000-000000000001';
 let myUUID        = null;
 let myId          = null;
 let myName        = null;
+let myEmail       = null;
 let gameId        = null;
 let gameCode      = null;
 let currentGame   = null;
@@ -629,6 +635,7 @@ async function init() {
 
   if (storedName) {
     myName = myName || storedName;
+    myEmail = localStorage.getItem('my_email') || null;
     document.getElementById('home-name').value = myName;
     showPortal(); return;
   }
@@ -640,6 +647,8 @@ function continueFromHome() {
   if (!name) return toast('Ange ditt namn');
   myName = name;
   localStorage.setItem('my_name', name);
+  const email = document.getElementById('home-email').value.trim();
+  if (email) { myEmail = email; localStorage.setItem('my_email', email); }
   showPortal();
 }
 
@@ -763,7 +772,7 @@ async function createGame() {
   if (ge) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + ge.message); }
   const { data: player, error: pe } = await sb.from('players').insert({
     game_id: game.id, name: myName, color: COLORS[0], emoji: EMOJIS[0],
-    score: 0, is_host: true, auth_user_id: myUUID,
+    score: 0, is_host: true, auth_user_id: myUUID, email: myEmail || null,
   }).select().single();
   if (pe) { setLoading('portal-create-btn', false, 'Skapa ny lobby'); return toast('Fel: ' + pe.message); }
   setLoading('portal-create-btn', false, 'Skapa ny lobby');
@@ -798,7 +807,7 @@ async function joinGame() {
     const idx = (all?.length || 0) % 8;
     const { data: np, error } = await sb.from('players').insert({
       game_id: game.id, name: myName, color: COLORS[idx], emoji: EMOJIS[idx],
-      score: 0, is_host: false, auth_user_id: myUUID,
+      score: 0, is_host: false, auth_user_id: myUUID, email: myEmail || null,
     }).select().single();
     if (error) { setLoading('portal-join-btn', false, 'Gå med i lobby'); return toast('Fel: ' + error.message); }
     player = np;
