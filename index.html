@@ -199,6 +199,7 @@ input::placeholder { color: var(--muted); }
 .gallery-meta-name { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cream); }
 .gallery-meta-tag { font-size: 10px; color: var(--orange); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
 .gallery-comment-badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.72); color: var(--cream); font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; letter-spacing: 0.5px; padding: 2px 6px; display: flex; align-items: center; gap: 3px; pointer-events: none; }
+.gallery-pts-badge { position: absolute; top: 6px; left: 6px; background: var(--orange); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.5px; padding: 2px 7px; pointer-events: none; }
 .gallery-upload-btn { position: fixed; bottom: 70px; right: 20px; width: 52px; height: 52px; background: var(--yellow); border: none; font-size: 22px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 110; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
 .gallery-upload-btn.visible { display: flex; }
 
@@ -386,7 +387,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.8</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.9</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -497,7 +498,7 @@ input::placeholder { color: var(--muted); }
     <h3 style="margin-bottom:12px;">Totalpoäng</h3>
     <div id="total-scores" class="stack-sm"></div>
   </div>
-  <button class="btn" id="back-to-lobby-btn" onclick="backToLobby()" style="display:none;">Tillbaka till lobby</button>
+  <button class="btn" id="back-to-lobby-btn" onclick="backToLobby()">Tillbaka till lobby</button>
 </div>
 
 <script>
@@ -1175,8 +1176,6 @@ async function renderResults(game) {
     d.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="chip-name">${p.name}${p.id===myId?' (du)':''}</span><span class="chip-score">${p.score}p</span>`;
     tl.appendChild(d);
   });
-  const amHostResults = (players || []).find(p => p.id === myId)?.is_host || false;
-  document.getElementById('back-to-lobby-btn').style.display = amHostResults ? '' : 'none';
 }
 
 async function backToLobby() {
@@ -1265,6 +1264,28 @@ async function loadGallery() {
     if (r.is_goran) goranCommentedIds.add(r.gallery_item_id);
   });
 
+  // Build points map per player per round from votes
+  const pointsMap = {}; // key: player_id + '_' + round
+  if (voteRows?.length) {
+    const byRound = {};
+    voteRows.forEach(v => {
+      if (!v.round) return;
+      if (!byRound[v.round]) byRound[v.round] = {};
+      byRound[v.round][v.voted_for_id] = (byRound[v.round][v.voted_for_id] || 0) + 1;
+    });
+    const PTS = [3, 2, 1];
+    Object.entries(byRound).forEach(([round, counts]) => {
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      let lastCount = -1, rankIdx = 0;
+      sorted.forEach(([pid, cnt]) => {
+        if (cnt !== lastCount) { lastCount = cnt; }
+        const pts = PTS[rankIdx] ?? 0;
+        pointsMap[pid + '_' + round] = pts;
+        rankIdx++;
+      });
+    });
+  }
+
   // Build filter tabs
   const rounds = [...new Set(items.filter(i => i.round).map(i => i.round))].sort((a,b) => a-b);
   const hasBonus = items.some(i => !i.round);
@@ -1274,11 +1295,11 @@ async function loadGallery() {
     const btn = document.createElement('button');
     btn.className = 'filter-chip' + (galleryFilter == f.key ? ' active' : '');
     btn.textContent = f.label;
-    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items, commentCounts, galleryRoundMeta); updateFilterChips(filters); };
+    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items, commentCounts, galleryRoundMeta, pointsMap); updateFilterChips(filters); };
     filterRow.appendChild(btn);
   });
 
-  renderGalleryItems(items, commentCounts, galleryRoundMeta);
+  renderGalleryItems(items, commentCounts, galleryRoundMeta, pointsMap);
 
   // Silently trigger Göran to comment on any photos he hasn't seen yet
   items.forEach(item => {
@@ -1294,7 +1315,7 @@ function updateFilterChips(filters) {
   });
 }
 
-function renderGalleryItems(items, commentCounts = {}, roundMeta = {}) {
+function renderGalleryItems(items, commentCounts = {}, roundMeta = {}, pointsMap = {}) {
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '';
 
@@ -1330,22 +1351,24 @@ function renderGalleryItems(items, commentCounts = {}, roundMeta = {}) {
         hdr.innerHTML = html;
       }
       grid.appendChild(hdr);
-      groupItems.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts)));
+      groupItems.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts, pointsMap)));
     });
   } else {
-    filtered.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts)));
+    filtered.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts, pointsMap)));
   }
 }
 
-function buildGalleryItem(item, commentCounts = {}) {
+function buildGalleryItem(item, commentCounts = {}, pointsMap = {}) {
   const d = document.createElement('div');
   d.className = 'gallery-item';
   const name = item.players?.name || '?';
   const emoji = item.players?.emoji || '';
   const tag = item.round ? 'Rnd ' + item.round : 'Bonus';
   const cc = commentCounts[item.id] || 0;
-  const badge = cc > 0 ? `<div class="gallery-comment-badge">💬 ${cc}</div>` : '';
-  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy">${badge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
+  const pts = item.round ? (pointsMap[item.player_id + '_' + item.round] ?? null) : null;
+  const commentBadge = cc > 0 ? `<div class="gallery-comment-badge">💬 ${cc}</div>` : '';
+  const ptsBadge = pts !== null ? `<div class="gallery-pts-badge">${pts > 0 ? '+' + pts : pts}p</div>` : '';
+  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy">${commentBadge}${ptsBadge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
   d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id, item.challenge);
   return d;
 }
