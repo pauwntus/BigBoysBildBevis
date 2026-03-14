@@ -23,7 +23,7 @@ const MESSAGES: Record<string, { subject: string; heading: string; body: string 
   },
 };
 
-const APP_URL = "https://pauwntus.github.io/BigBoysBildBevis/";
+const APP_BASE = "https://pauwntus.github.io/BigBoysBildBevis/";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -43,11 +43,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: players } = await sb
-      .from("players")
-      .select("name, email")
-      .eq("game_id", game_id)
-      .not("email", "is", null);
+    const [{ data: game }, { data: players }] = await Promise.all([
+      sb.from("games").select("code").eq("id", game_id).single(),
+      sb.from("players").select("name, email").eq("game_id", game_id).not("email", "is", null),
+    ]);
 
     const recipients = (players ?? []).filter((p) => p.email);
     if (recipients.length === 0) {
@@ -75,8 +74,8 @@ Deno.serve(async (req) => {
                 <h1 style="font-size:28px;margin:0 0 8px;color:#ff4d00;">${msg.heading}</h1>
                 <p style="margin:0 0 24px;color:#aaa;">Hej ${player.name}!</p>
                 <p style="margin:0 0 32px;font-size:16px;">${msg.body}</p>
-                <a href="${APP_URL}" style="display:inline-block;background:#ff4d00;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">
-                  Öppna spelet →
+                <a href="${APP_BASE}?code=${game?.code}" style="display:inline-block;background:#ff4d00;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:16px;">
+                  Gå till lobby ${game?.code} →
                 </a>
               </div>
             `,
