@@ -1231,7 +1231,7 @@ async function loadGallery() {
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
   const [{ data: items }, { data: voteRows }] = await Promise.all([
-    sb.from('gallery').select('id, round, player_id, challenge, created_at, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
+    sb.from('gallery').select('id, round, player_id, challenge, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
     sb.from('votes').select('voted_for_id, round').eq('game_id', gameId),
   ]);
   const itemIds = (items || []).map(g => g.id);
@@ -1312,7 +1312,9 @@ async function loadGallery() {
 
   // Load thumbnails in background and fill in images as they arrive
   if (itemIds.length) {
-    sb.from('gallery').select('id, thumbnail, photo').in('id', itemIds).then(({ data: photos }) => {
+    sb.from('gallery').select('id, thumbnail, photo').in('id', itemIds).then(({ data: photos, error: photoErr }) => {
+      // If thumbnail col doesn't exist yet (migration pending), fall back to photo-only fetch
+      if (photoErr) { sb.from('gallery').select('id, photo').in('id', itemIds).then(({ data: photos2 }) => { (photos2 || []).forEach(p => { galleryPhotoCache[p.id] = p.photo; galleryFullCache[p.id] = p.photo; const img = document.querySelector(`.gallery-item img[data-item-id="${p.id}"]`); if (img) img.src = p.photo; }); }); return; }
       (photos || []).forEach(p => {
         const src = p.thumbnail || p.photo; // fallback for old rows without thumbnail
         galleryPhotoCache[p.id] = src;
