@@ -387,7 +387,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v2.1</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v2.2</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -934,10 +934,10 @@ async function renderActive(game) {
   const { data: players } = await sb.from('players').select('is_host').eq('id', myId).single();
   const amHost = players?.is_host || false;
   document.getElementById('host-abort-zone').style.display = amHost ? '' : 'none';
-  const { data: existing } = await sb.from('submissions').select('photo')
+  const { data: existing } = await sb.from('submissions').select('photo, thumbnail')
     .eq('game_id', gameId).eq('player_id', myId).eq('round', game.current_round).maybeSingle();
   if (existing) {
-    showZone('submitted'); document.getElementById('submitted-img').src = existing.photo;
+    showZone('submitted'); document.getElementById('submitted-img').src = existing.thumbnail || existing.photo;
     await refreshSubProgress();
   } else { showZone('upload'); }
 }
@@ -1030,7 +1030,7 @@ async function renderVoting(game) {
     badge.style.display = '';
   } else if (badge) badge.style.display = 'none';
   const [{ data: subs }, { data: existingVote }, { data: mePlayer }] = await Promise.all([
-    sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
+    sb.from('submissions').select('id, player_id, thumbnail, photo, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
     sb.from('players').select('is_host').eq('id', myId).single(),
   ]);
@@ -1048,7 +1048,7 @@ async function renderVoting(game) {
     const delay = (i * 0.4).toFixed(1);
     div.className = 'photo-item' + (isMe ? ' mine' : '') + (isMe ? '' : ' floating');
     div.style.animationDelay = delay + 's';
-    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
+    div.innerHTML = `<img src="${sub.thumbnail || sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
     if (!isMe && !existingVote) {
       div.addEventListener('click', () => selectVote(div, sub.player_id));
@@ -1155,7 +1155,7 @@ async function renderResults(game) {
   document.getElementById('results-title').textContent = game.current_challenge || 'Utmaning';
   const [{ data: votes }, { data: subs }, { data: players }] = await Promise.all([
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('round', game.current_round),
-    sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
+    sb.from('submissions').select('id, player_id, thumbnail, photo, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('players').select('*').eq('game_id', gameId).order('score', { ascending: false }),
   ]);
   const counts = {};
@@ -1172,7 +1172,7 @@ async function renderResults(game) {
     const d = document.createElement('div');
     d.className = 'result-row';
     d.style.borderColor = RC[rankIdx] || 'rgba(255,255,255,0.1)';
-    d.innerHTML = `<span class="result-rank">${RANK[rankIdx]||(rankIdx+1)}</span><img class="result-photo" src="${sub.photo}" alt="" style="cursor:pointer;"><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
+    d.innerHTML = `<span class="result-rank">${RANK[rankIdx]||(rankIdx+1)}</span><img class="result-photo" src="${sub.thumbnail || sub.photo}" alt="" style="cursor:pointer;"><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
     d.querySelector('.result-photo').addEventListener('click', () => openLightbox(sub.photo, sub.players?.name || '?', '', null, null, game.current_challenge));
     rl.appendChild(d);
   });
@@ -1231,7 +1231,7 @@ async function loadGallery() {
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
   const [{ data: items }, { data: voteRows }] = await Promise.all([
-    sb.from('gallery').select('id, round, player_id, challenge, created_at, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
+    sb.from('gallery').select('id, round, player_id, challenge, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
     sb.from('votes').select('voted_for_id, round').eq('game_id', gameId),
   ]);
   const itemIds = (items || []).map(g => g.id);
@@ -1312,7 +1312,9 @@ async function loadGallery() {
 
   // Load thumbnails in background and fill in images as they arrive
   if (itemIds.length) {
-    sb.from('gallery').select('id, thumbnail, photo').in('id', itemIds).then(({ data: photos }) => {
+    sb.from('gallery').select('id, thumbnail, photo').in('id', itemIds).then(({ data: photos, error: photoErr }) => {
+      // If thumbnail col doesn't exist yet (migration pending), fall back to photo-only fetch
+      if (photoErr) { sb.from('gallery').select('id, photo').in('id', itemIds).then(({ data: photos2 }) => { (photos2 || []).forEach(p => { galleryPhotoCache[p.id] = p.photo; galleryFullCache[p.id] = p.photo; const img = document.querySelector(`.gallery-item img[data-item-id="${p.id}"]`); if (img) img.src = p.photo; }); }); return; }
       (photos || []).forEach(p => {
         const src = p.thumbnail || p.photo; // fallback for old rows without thumbnail
         galleryPhotoCache[p.id] = src;
