@@ -497,7 +497,7 @@ input::placeholder { color: var(--muted); }
     <h3 style="margin-bottom:12px;">Totalpoäng</h3>
     <div id="total-scores" class="stack-sm"></div>
   </div>
-  <button class="btn" id="back-to-lobby-btn" onclick="backToLobby()" style="display:none;">Tillbaka till lobby</button>
+  <button class="btn" id="back-to-lobby-btn" onclick="handleBackToLobby()">Tillbaka till lobby</button>
 </div>
 
 <script>
@@ -1175,8 +1175,20 @@ async function renderResults(game) {
     d.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="chip-name">${p.name}${p.id===myId?' (du)':''}</span><span class="chip-score">${p.score}p</span>`;
     tl.appendChild(d);
   });
-  const amHostResults = (players || []).find(p => p.id === myId)?.is_host || false;
-  document.getElementById('back-to-lobby-btn').style.display = amHostResults ? '' : 'none';
+  _amHostResults = (players || []).find(p => p.id === myId)?.is_host || false;
+}
+
+let _amHostResults = false;
+
+function handleBackToLobby() {
+  if (_amHostResults) backToLobby();
+  else goToLobbyLocal();
+}
+
+function goToLobbyLocal() {
+  showScreen('screen-lobby');
+  setNavTab('game');
+  renderLobby();
 }
 
 async function backToLobby() {
