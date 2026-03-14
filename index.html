@@ -476,7 +476,8 @@ input::placeholder { color: var(--muted); }
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
   <div id="vote-action">
-    <p class="text-muted" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Tryck på bilden du vill rösta på</p>
+    <p class="text-muted" id="vote-hint" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Tryck på bilden du vill rösta på</p>
+    <button class="btn" id="vote-confirm-btn" style="display:none; margin-top:14px;" onclick="confirmVote()">Rösta!</button>
   </div>
   <div id="vote-waiting" style="display:none;" class="card text-center">
     <p class="text-muted" style="margin-bottom:10px;">Röstat! Väntar på de andra<span class="waiting-dots"></span></p>
@@ -1041,26 +1042,38 @@ async function renderVoting(game) {
     div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
     if (!isMe && !existingVote) {
-      div.addEventListener('click', () => lockVote(div, sub.player_id));
+      div.addEventListener('click', () => selectVote(div, sub.player_id));
     }
     grid.appendChild(div);
   });
   if (existingVote) { selectedVoteFor = existingVote.voted_for_id; showVoteWaiting(); }
-  else { document.getElementById('vote-action').style.display = ''; document.getElementById('vote-waiting').style.display = 'none'; }
+  else {
+    document.getElementById('vote-action').style.display = '';
+    document.getElementById('vote-waiting').style.display = 'none';
+    document.getElementById('vote-hint').style.display = '';
+    document.getElementById('vote-confirm-btn').style.display = 'none';
+    document.getElementById('vote-confirm-btn').disabled = false;
+  }
   await refreshVoteProgress();
 }
 
-async function lockVote(el, playerId) {
-  document.querySelectorAll('.photo-item').forEach(i => {
-    i.classList.remove('floating');
-    i.style.animationDelay = '';
-  });
+function selectVote(el, playerId) {
+  document.querySelectorAll('.photo-item').forEach(i => i.classList.remove('selected'));
   el.classList.add('selected');
   selectedVoteFor = playerId;
+  document.getElementById('vote-hint').style.display = 'none';
+  document.getElementById('vote-confirm-btn').style.display = '';
+}
+
+async function confirmVote() {
+  if (!selectedVoteFor) return;
+  const btn = document.getElementById('vote-confirm-btn');
+  btn.disabled = true;
+  document.querySelectorAll('.photo-item').forEach(i => { i.classList.remove('floating'); i.style.animationDelay = ''; });
   const { error } = await sb.from('votes').upsert({
     game_id: gameId, voter_id: myId, voted_for_id: selectedVoteFor, round: currentGame.current_round,
   }, { onConflict: 'game_id,voter_id,round' });
-  if (error) { toast('Fel: ' + error.message); return; }
+  if (error) { toast('Fel: ' + error.message); btn.disabled = false; return; }
   showVoteWaiting();
   await refreshVoteProgress();
 }
@@ -1121,8 +1134,10 @@ async function tallyRound(round) {
   const { data: alreadyIn } = await sb.from('gallery').select('id').eq('game_id', gameId).eq('round', round).limit(1);
   if (!alreadyIn?.length) {
     const { data: finalSubs } = await sb.from('submissions').select('*').eq('game_id', gameId).eq('round', round);
-    if (finalSubs?.length)
-      await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round, challenge: currentGame?.current_challenge || null })));
+    if (finalSubs?.length) {
+      const { error: galleryErr } = await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round, challenge: currentGame?.current_challenge || null })));
+      if (galleryErr) console.error('Gallery insert failed:', galleryErr.message);
+    }
   }
 }
 
