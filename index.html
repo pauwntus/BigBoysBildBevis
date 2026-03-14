@@ -383,7 +383,7 @@ input::placeholder { color: var(--muted); }
   <div class="text-center" style="margin-top:24px;">
     <button class="logout-btn" onclick="changeName()">Byt namn</button>
   </div>
-  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.4</div>
+  <div style="position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--muted);opacity:0.5;">v1.5</div>
 </div>
 
 <!-- ══ LOBBY ══════════════════════════════════════════ -->
@@ -618,7 +618,8 @@ async function init() {
   if (urlCode) window._pendingCode = urlCode;
 
   myUUID = getOrCreateUUID();
-  const storedName = localStorage.getItem('my_name');
+  const storedName  = localStorage.getItem('my_name');
+  const storedEmail = localStorage.getItem('my_email') || null;
 
   // Try to resume existing player session
   const storedPlayerId = localStorage.getItem('player_id');
@@ -631,6 +632,7 @@ async function init() {
         myName = player.name;
         showPortal(); return;
       }
+      myEmail = storedEmail;
       await navigateToPlayer(player); return;
     }
     clearLocalSession();
@@ -640,13 +642,14 @@ async function init() {
   const { data: players } = await sb.from('players').select('*, games(*)')
     .eq('auth_user_id', myUUID).order('created_at', { ascending: false }).limit(1);
   const player = players?.[0];
-  if (player?.games && !window._pendingCode) { await navigateToPlayer(player); return; }
+  if (player?.games && !window._pendingCode) { myEmail = storedEmail; await navigateToPlayer(player); return; }
   if (player?.name) myName = player.name;
 
   if (storedName) {
     myName = myName || storedName;
-    myEmail = localStorage.getItem('my_email') || null;
+    myEmail = storedEmail;
     document.getElementById('home-name').value = myName;
+    if (myEmail) document.getElementById('home-email').value = myEmail;
     showPortal(); return;
   }
   showScreen('screen-home');
@@ -674,6 +677,9 @@ async function navigateToPlayer(player) {
   currentGame = player.games;
   localStorage.setItem('player_id', myId);
   localStorage.setItem('game_id',   gameId);
+  if (myEmail && !player.email) {
+    sb.from('players').update({ email: myEmail }).eq('id', myId);
+  }
   await subscribeToGame();
   registerPush();
   await renderByPhase(player.games);
