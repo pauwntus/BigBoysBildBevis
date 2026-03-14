@@ -694,6 +694,7 @@ function clearLocalSession() {
 
 function changeName() {
   document.getElementById('home-name').value = myName || '';
+  document.getElementById('home-email').value = myEmail || '';
   showScreen('screen-home');
 }
 
@@ -1188,7 +1189,7 @@ async function tallyRound(round) {
   if (!alreadyIn?.length) {
     const { data: finalSubs } = await sb.from('submissions').select('*').eq('game_id', gameId).eq('round', round);
     if (finalSubs?.length)
-      await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round })));
+      await sb.from('gallery').insert(finalSubs.map(s => ({ game_id: gameId, player_id: s.player_id, photo: s.photo, round, challenge: currentGame?.current_challenge || null })));
   }
 }
 
@@ -1206,12 +1207,15 @@ async function renderResults(game) {
   const RANK = ['🥇','🥈','🥉'], RC = ['var(--gold)','var(--silver)','var(--bronze)'], PTS = [3,2,1];
 
   const rl = document.getElementById('results-list'); rl.innerHTML = '';
+  let lastVc = -1, rankIdx = 0;
   sorted.forEach((sub, i) => {
-    const vc = counts[sub.player_id] || 0, pts = PTS[i] || 0;
+    const vc = counts[sub.player_id] || 0;
+    if (vc !== lastVc) { rankIdx = i; lastVc = vc; }
+    const pts = PTS[rankIdx] || 0;
     const d = document.createElement('div');
     d.className = 'result-row';
-    d.style.borderColor = RC[i] || 'rgba(255,255,255,0.1)';
-    d.innerHTML = `<span class="result-rank">${RANK[i]||(i+1)}</span><img class="result-photo" src="${sub.photo}" alt=""><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
+    d.style.borderColor = RC[rankIdx] || 'rgba(255,255,255,0.1)';
+    d.innerHTML = `<span class="result-rank">${RANK[rankIdx]||(rankIdx+1)}</span><img class="result-photo" src="${sub.photo}" alt=""><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
     rl.appendChild(d);
   });
 
@@ -1234,6 +1238,7 @@ async function backToLobby() {
 // ── Bottom nav & screen tracking ──────────────────────
 let currentGameScreen = 'screen-lobby';
 let galleryFilter = 'all'; // 'all' | number (round) | 'bonus'
+let galleryRoundMeta = {}; // { [round]: { challenge, winner: { name, emoji } } }
 
 function showBottomNav(visible) {
   document.getElementById('bottom-nav').classList.toggle('visible', visible);
@@ -1266,11 +1271,35 @@ async function loadGallery() {
 
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
-  const { data: items } = await sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true });
+  const [{ data: items }, { data: voteRows }] = await Promise.all([
+    sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
+    sb.from('votes').select('voted_for_id, round').eq('game_id', gameId),
+  ]);
   const itemIds = (items || []).map(g => g.id);
   const { data: commentRows } = itemIds.length
     ? await sb.from('comments').select('gallery_item_id, is_goran').in('gallery_item_id', itemIds)
     : { data: [] };
+
+  // Build round metadata: challenge text + winner per round
+  galleryRoundMeta = {};
+  if (voteRows?.length && items?.length) {
+    const votesByRound = {};
+    voteRows.forEach(v => {
+      if (!v.round) return;
+      if (!votesByRound[v.round]) votesByRound[v.round] = {};
+      votesByRound[v.round][v.voted_for_id] = (votesByRound[v.round][v.voted_for_id] || 0) + 1;
+    });
+    Object.entries(votesByRound).forEach(([round, counts]) => {
+      const winnerId = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      const roundItems = (items || []).filter(i => i.round == round);
+      const challenge = roundItems.find(i => i.challenge)?.challenge || null;
+      const winnerItem = winnerId ? roundItems.find(i => i.player_id === winnerId) : null;
+      galleryRoundMeta[round] = {
+        challenge,
+        winner: winnerItem ? { name: winnerItem.players?.name, emoji: winnerItem.players?.emoji } : null,
+      };
+    });
+  }
 
   grid.innerHTML = '';
 
@@ -1294,11 +1323,11 @@ async function loadGallery() {
     const btn = document.createElement('button');
     btn.className = 'filter-chip' + (galleryFilter == f.key ? ' active' : '');
     btn.textContent = f.label;
-    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items, commentCounts); updateFilterChips(filters); };
+    btn.onclick = () => { galleryFilter = f.key; renderGalleryItems(items, commentCounts, galleryRoundMeta); updateFilterChips(filters); };
     filterRow.appendChild(btn);
   });
 
-  renderGalleryItems(items, commentCounts);
+  renderGalleryItems(items, commentCounts, galleryRoundMeta);
 
   // Silently trigger Göran to comment on any photos he hasn't seen yet
   items.forEach(item => {
@@ -1314,7 +1343,7 @@ function updateFilterChips(filters) {
   });
 }
 
-function renderGalleryItems(items, commentCounts = {}) {
+function renderGalleryItems(items, commentCounts = {}, roundMeta = {}) {
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '';
 
@@ -1339,7 +1368,16 @@ function renderGalleryItems(items, commentCounts = {}) {
       const hdr = document.createElement('div');
       hdr.className = 'gallery-round-hdr';
       hdr.style.gridColumn = '1 / -1';
-      hdr.textContent = key === 'bonus' ? '— Bonusbilder —' : '— Runda ' + key.slice(1) + ' —';
+      if (key === 'bonus') {
+        hdr.textContent = '— Bonusbilder —';
+      } else {
+        const roundNum = key.slice(1);
+        const meta = roundMeta[roundNum];
+        let html = `— Runda ${roundNum} —`;
+        if (meta?.challenge) html += `<span style="display:block;font-weight:400;font-style:normal;color:var(--cream);opacity:0.75;margin-top:3px;letter-spacing:0;text-transform:none;font-family:'DM Sans',sans-serif;font-size:12px;">${escHtml(meta.challenge)}</span>`;
+        if (meta?.winner) html += `<span style="display:block;color:var(--gold);margin-top:3px;">🥇 ${meta.winner.emoji || ''} ${escHtml(meta.winner.name || '')}</span>`;
+        hdr.innerHTML = html;
+      }
       grid.appendChild(hdr);
       groupItems.forEach(item => grid.appendChild(buildGalleryItem(item, commentCounts)));
     });
@@ -1357,7 +1395,7 @@ function buildGalleryItem(item, commentCounts = {}) {
   const cc = commentCounts[item.id] || 0;
   const badge = cc > 0 ? `<div class="gallery-comment-badge">💬 ${cc}</div>` : '';
   d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy">${badge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
-  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id);
+  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id, item.challenge);
   return d;
 }
 
@@ -1453,6 +1491,7 @@ function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 async function deleteGalleryItem() {
   if (!lightboxItemId) return;
   if (!confirm('Radera bilden?')) return;
+  await sb.from('comments').delete().eq('gallery_item_id', lightboxItemId);
   const { error } = await sb.from('gallery').delete().eq('id', lightboxItemId);
   if (error) return toast('Kunde inte radera: ' + error.message);
   closeLightbox();
