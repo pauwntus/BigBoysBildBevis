@@ -1190,6 +1190,7 @@ async function backToLobby() {
 let currentGameScreen = 'screen-lobby';
 let galleryFilter = 'all'; // 'all' | number (round) | 'bonus'
 let galleryRoundMeta = {}; // { [round]: { challenge, winner: { name, emoji } } }
+const galleryPhotoCache = {}; // { [item.id]: base64photo }
 
 function showBottomNav(visible) {
   document.getElementById('bottom-nav').classList.toggle('visible', visible);
@@ -1223,7 +1224,7 @@ async function loadGallery() {
   grid.innerHTML = '<div style="grid-column:1/-1; display:flex; justify-content:center; padding:48px 0;"><div class="spinner"></div></div>';
 
   const [{ data: items }, { data: voteRows }] = await Promise.all([
-    sb.from('gallery').select('*, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
+    sb.from('gallery').select('id, round, player_id, challenge, created_at, players(name, emoji)').eq('game_id', gameId).order('round', { ascending: true }),
     sb.from('votes').select('voted_for_id, round').eq('game_id', gameId),
   ]);
   const itemIds = (items || []).map(g => g.id);
@@ -1302,12 +1303,22 @@ async function loadGallery() {
 
   renderGalleryItems(items, commentCounts, galleryRoundMeta, pointsMap);
 
-  // Silently trigger Göran to comment on any photos he hasn't seen yet
-  items.forEach(item => {
-    if (!goranCommentedIds.has(item.id) && item.photo) {
-      triggerGoranComment(item.id, item.photo, item.challenge || null);
-    }
-  });
+  // Load photos in background and fill in images as they arrive
+  if (itemIds.length) {
+    sb.from('gallery').select('id, photo').in('id', itemIds).then(({ data: photos }) => {
+      (photos || []).forEach(p => {
+        galleryPhotoCache[p.id] = p.photo;
+        const img = document.querySelector(`.gallery-item img[data-item-id="${p.id}"]`);
+        if (img) img.src = p.photo;
+      });
+      // Trigger Göran comments after photos are available
+      items.forEach(item => {
+        if (!goranCommentedIds.has(item.id) && galleryPhotoCache[item.id]) {
+          triggerGoranComment(item.id, galleryPhotoCache[item.id], item.challenge || null);
+        }
+      });
+    });
+  }
 }
 
 function updateFilterChips(filters) {
@@ -1371,8 +1382,12 @@ function buildGalleryItem(item, commentCounts = {}, pointsMap = {}) {
   const pts = item.round ? (pointsMap[item.player_id + '_' + item.round] ?? null) : null;
   const commentBadge = cc > 0 ? `<div class="gallery-comment-badge">💬 ${cc}</div>` : '';
   const ptsBadge = pts !== null ? `<div class="gallery-pts-badge">${pts > 0 ? '+' + pts : pts}p</div>` : '';
-  d.innerHTML = `<img src="${item.photo}" alt="" loading="lazy">${commentBadge}${ptsBadge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
-  d.onclick = () => openLightbox(item.photo, emoji + ' ' + name, tag, item.id, item.player_id, item.challenge);
+  const cachedSrc = galleryPhotoCache[item.id] || '';
+  d.innerHTML = `<img src="${cachedSrc}" data-item-id="${item.id}" alt="" style="min-height:80px;background:#111;">${commentBadge}${ptsBadge}<div class="gallery-meta"><span class="gallery-meta-name">${emoji} ${name}</span><span class="gallery-meta-tag">${tag}</span></div>`;
+  d.onclick = async () => {
+    const photo = galleryPhotoCache[item.id] || await sb.from('gallery').select('photo').eq('id', item.id).single().then(r => { if (r.data?.photo) galleryPhotoCache[item.id] = r.data.photo; return r.data?.photo || ''; });
+    openLightbox(photo, emoji + ' ' + name, tag, item.id, item.player_id, item.challenge);
+  };
   return d;
 }
 
