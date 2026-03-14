@@ -1091,9 +1091,9 @@ async function lockVote(el, playerId) {
   });
   el.classList.add('selected');
   selectedVoteFor = playerId;
-  const { error } = await sb.from('votes').insert({
+  const { error } = await sb.from('votes').upsert({
     game_id: gameId, voter_id: myId, voted_for_id: selectedVoteFor, round: currentGame.current_round,
-  });
+  }, { onConflict: 'game_id,voter_id,round' });
   if (error) { toast('Fel: ' + error.message); return; }
   showVoteWaiting();
   await refreshVoteProgress();
