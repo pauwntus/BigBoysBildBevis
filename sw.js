@@ -1,4 +1,4 @@
-const CACHE = 'bbbildbevis-v2';
+const CACHE = 'bbbildbevis-v3';
 const PRECACHE = [
   '/BigBoysBildBevis/',
   '/BigBoysBildBevis/index.html',
