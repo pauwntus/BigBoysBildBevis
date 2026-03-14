@@ -807,10 +807,12 @@ async function joinGame() {
 
   let player;
   if (byUUID) {
-    player = byUUID; toast('Välkommen tillbaka, ' + byUUID.name + '!');
+    if (myEmail && !byUUID.email) await sb.from('players').update({ email: myEmail }).eq('id', byUUID.id);
+    player = { ...byUUID, email: myEmail || byUUID.email }; toast('Välkommen tillbaka, ' + byUUID.name + '!');
   } else if (byName) {
-    await sb.from('players').update({ auth_user_id: myUUID }).eq('id', byName.id);
-    player = { ...byName, auth_user_id: myUUID };
+    const upd = { auth_user_id: myUUID, ...(myEmail && !byName.email ? { email: myEmail } : {}) };
+    await sb.from('players').update(upd).eq('id', byName.id);
+    player = { ...byName, ...upd };
     toast('Välkommen tillbaka, ' + byName.name + '!');
   } else {
     const { data: all } = await sb.from('players').select('id').eq('game_id', game.id);
