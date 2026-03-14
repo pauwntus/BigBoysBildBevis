@@ -799,7 +799,6 @@ function shareLink() {
 
 // ── Lobby ─────────────────────────────────────────────
 async function renderLobby() {
-  updateNotifBtn();
   document.getElementById('lobby-code').textContent = gameCode || '----';
   const { data: players } = await sb.from('players').select('*')
     .eq('game_id', gameId).order('score', { ascending: false });
