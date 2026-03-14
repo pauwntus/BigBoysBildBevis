@@ -152,14 +152,17 @@ input::placeholder { color: var(--muted); }
 .vote-check { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; background: var(--orange); display: none; align-items: center; justify-content: center; font-size: 14px; color: white; }
 .photo-item.selected .vote-check { display: flex; }
 .photo-label { font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 6px; background: rgba(0,0,0,0.65); position: absolute; bottom: 22px; left: 0; right: 0; color: var(--cream); }
-.vote-hold-bar { position: absolute; bottom: 0; left: 0; height: 6px; width: 0%; background: var(--orange); transition: width 0.05s linear; }
-.photo-item.holding { border-color: var(--yellow); }
+.photo-item:not(.mine):not(.selected) { cursor: pointer; }
+.photo-item:not(.mine):not(.selected):active { border-color: var(--orange); transform: scale(0.97); }
 @keyframes voteFloat {
   0%   { transform: translateY(0px) rotate(-0.5deg); }
   50%  { transform: translateY(-4px) rotate(0.5deg); }
   100% { transform: translateY(0px) rotate(-0.5deg); }
 }
 .photo-item.floating { animation: voteFloat 2.5s ease-in-out infinite; }
+
+/* ── Voting challenge badge ── */
+.voting-challenge-badge { font-size: 13px; font-family: 'Barlow Condensed', sans-serif; font-style: italic; font-weight: 600; color: var(--muted); text-align: center; padding: 6px 16px 2px; letter-spacing: 0.3px; }
 
 /* ── Results ── */
 .result-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-left: 4px solid rgba(255,255,255,0.1); }
@@ -400,7 +403,6 @@ input::placeholder { color: var(--muted); }
   <h3 style="margin-bottom:10px;">Spelare</h3>
   <div id="lobby-players" class="stack-sm"></div>
   <div class="text-center" style="padding-top:24px; margin-top:auto; display:flex; flex-direction:column; gap:12px; align-items:center;">
-    <button class="logout-btn" id="notif-btn" onclick="enableNotifications()" style="display:none;">🔔 Aktivera notiser</button>
     <button class="logout-btn" onclick="leaveGame()">Lämna spel</button>
   </div>
 </div>
@@ -470,10 +472,11 @@ input::placeholder { color: var(--muted); }
   <div class="screen-hdr">
     <div><h3>Röstning</h3><h2>Vilken är bäst?</h2></div>
   </div>
+  <div id="voting-challenge-badge" class="voting-challenge-badge" style="display:none;"></div>
   <div class="accent-line"></div>
   <div id="voting-grid" class="photo-grid" style="margin-bottom:16px;"></div>
   <div id="vote-action">
-    <p class="text-muted" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Håll inne på bilden du vill rösta på</p>
+    <p class="text-muted" style="text-align:center; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Tryck på bilden du vill rösta på</p>
   </div>
   <div id="vote-waiting" style="display:none;" class="card text-center">
     <p class="text-muted" style="margin-bottom:10px;">Röstat! Väntar på de andra<span class="waiting-dots"></span></p>
@@ -493,7 +496,7 @@ input::placeholder { color: var(--muted); }
     <h3 style="margin-bottom:12px;">Totalpoäng</h3>
     <div id="total-scores" class="stack-sm"></div>
   </div>
-  <button class="btn" onclick="backToLobby()">Tillbaka till lobby</button>
+  <button class="btn" id="back-to-lobby-btn" onclick="backToLobby()" style="display:none;">Tillbaka till lobby</button>
 </div>
 
 <script>
@@ -544,19 +547,6 @@ let pendingPhoto  = null;
 let pickedChallenge = null;
 let selectedVoteFor = null;
 
-// ── Push notifications ─────────────────────────────────
-const VAPID_PUBLIC_KEY = 'BAARI6S69neZkeZ1Pr5hUHHFse7UmwAyY36tjeT9j9Qcq9Qq4rorsubBPXF4OLbQqjtzyAXgjfKC4P1G8ZS84P0';
-
-async function triggerPush(phase) {
-  try {
-    await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-      body: JSON.stringify({ game_id: gameId, phase }),
-    });
-  } catch (e) { console.warn('Push trigger failed:', e); }
-}
-
 async function triggerEmail(phase) {
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
@@ -565,47 +555,6 @@ async function triggerEmail(phase) {
       body: JSON.stringify({ game_id: gameId, phase }),
     });
   } catch (e) { console.warn('Email trigger failed:', e); }
-}
-
-function urlB64ToUint8Array(b64) {
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-}
-
-function updateNotifBtn() {
-  const btn = document.getElementById('notif-btn');
-  if (!btn) return;
-  const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-  btn.style.display = (supported && Notification.permission !== 'granted') ? 'inline-block' : 'none';
-}
-
-async function enableNotifications() {
-  await registerPush();
-  updateNotifBtn();
-}
-
-async function registerPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  try {
-    const reg = await navigator.serviceWorker.register('/BigBoysBildBevis/sw.js');
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-    const existing = await reg.pushManager.getSubscription();
-    const sub = existing || await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
-    const endpoint = sub.endpoint;
-    const p256dhRaw = sub.getKey('p256dh');
-    const authRaw   = sub.getKey('auth');
-    const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhRaw)));
-    const auth   = btoa(String.fromCharCode(...new Uint8Array(authRaw)));
-    await sb.from('push_subscriptions').upsert(
-      { player_id: myId, game_id: gameId, endpoint, p256dh, auth },
-      { onConflict: 'endpoint' }
-    );
-  } catch (e) { console.warn('Push setup failed:', e); }
 }
 
 function getOrCreateUUID() {
@@ -683,7 +632,6 @@ async function navigateToPlayer(player) {
     sb.from('players').update({ email: myEmail }).eq('id', myId);
   }
   await subscribeToGame();
-  registerPush();
   await renderByPhase(player.games);
 }
 
@@ -872,6 +820,8 @@ async function renderLobby() {
 }
 
 async function removePlayer(playerId) {
+  const name = document.querySelector(`[onclick="removePlayer('${playerId}')"]`)?.closest('.player-chip')?.querySelector('.chip-name')?.textContent?.replace(' (du)', '') || 'spelaren';
+  if (!confirm(`Ta bort ${name} från spelet?`)) return;
   await sb.from('players').delete().eq('id', playerId);
 }
 
@@ -933,7 +883,6 @@ async function confirmChallenge() {
     current_challenge_emoji: pickedChallenge.emoji, current_round: newRound,
   }).eq('id', gameId);
   if (error) { toast('Fel: ' + error.message); document.getElementById('confirm-btn').disabled = false; return; }
-  triggerPush('challenge');
 
   // If Göran is active, ensure he has a player row then fire his photo generation
   if (currentGame.goran_active) {
@@ -1044,13 +993,18 @@ async function refreshSubProgress() {
   const humanSubs = (subs || []).filter(s => s.player_id !== goranPid);
   const done = humanSubs.length, total = humanPlayers.length;
   document.getElementById('sub-progress').style.width = (total > 0 ? done / total * 100 : 0) + '%';
-  document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in`;
+  let goranStatus = '';
+  if (currentGame?.goran_active && goranPid) {
+    const goranSub = (subs || []).find(s => s.player_id === goranPid);
+    goranStatus = goranSub ? ' · Göran ✓' : ' · Göran fotar…';
+  }
+  document.getElementById('sub-count').textContent = `${done} / ${total} har lämnat in${goranStatus}`;
   if (done >= total && total > 0) {
     setTimeout(async () => {
       const { data: fresh } = await sb.from('games').select('*').eq('id', gameId).single();
       if (fresh?.phase === 'active') {
         const { data: upd } = await sb.from('games').update({ phase: 'voting' }).eq('id', gameId).eq('phase', 'active').select();
-        if (upd?.length) { triggerPush('voting'); triggerEmail('voting'); await renderByPhase(upd[0]); return; }
+        if (upd?.length) { triggerEmail('voting'); await renderByPhase(upd[0]); return; }
       }
       if (fresh?.phase === 'voting') await renderByPhase(fresh);
     }, 800);
@@ -1061,6 +1015,11 @@ async function refreshSubProgress() {
 // ── Voting ────────────────────────────────────────────
 async function renderVoting(game) {
   selectedVoteFor = null;
+  const badge = document.getElementById('voting-challenge-badge');
+  if (badge && game.current_challenge) {
+    badge.textContent = (game.current_challenge_emoji ? game.current_challenge_emoji + ' ' : '') + game.current_challenge;
+    badge.style.display = '';
+  } else if (badge) badge.style.display = 'none';
   const [{ data: subs }, { data: existingVote }, { data: mePlayer }] = await Promise.all([
     sb.from('submissions').select('*, players(name)').eq('game_id', gameId).eq('round', game.current_round),
     sb.from('votes').select('voted_for_id').eq('game_id', gameId).eq('voter_id', myId).eq('round', game.current_round).maybeSingle(),
@@ -1074,41 +1033,16 @@ async function renderVoting(game) {
     }
   }
   const grid = document.getElementById('voting-grid'); grid.innerHTML = '';
-  const HOLD_MS = 1500;
   shuffle(subs || []).forEach((sub, i) => {
     const isMe = sub.player_id === myId;
     const div = document.createElement('div');
     const delay = (i * 0.4).toFixed(1);
     div.className = 'photo-item' + (isMe ? ' mine' : '') + (isMe ? '' : ' floating');
     div.style.animationDelay = delay + 's';
-    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div><div class="vote-hold-bar"></div>`;
+    div.innerHTML = `<img src="${sub.photo}" alt=""><div class="vote-check">✓</div><div class="photo-label">${isMe ? 'Ditt foto' : 'Foto ' + (i + 1)}</div>`;
     if (existingVote?.voted_for_id === sub.player_id) div.classList.add('selected');
     if (!isMe && !existingVote) {
-      let holdTimer = null, startTime = null, raf = null;
-      const bar = div.querySelector('.vote-hold-bar');
-      function startHold(e) {
-        e.preventDefault();
-        div.classList.add('holding');
-        startTime = Date.now();
-        function tick() {
-          const pct = Math.min((Date.now() - startTime) / HOLD_MS * 100, 100);
-          bar.style.width = pct + '%';
-          if (pct < 100) { raf = requestAnimationFrame(tick); }
-          else { cancelAnimationFrame(raf); lockVote(div, sub.player_id); }
-        }
-        raf = requestAnimationFrame(tick);
-      }
-      function cancelHold() {
-        cancelAnimationFrame(raf);
-        div.classList.remove('holding');
-        bar.style.width = '0%';
-      }
-      div.addEventListener('mousedown', startHold);
-      div.addEventListener('touchstart', startHold, { passive: false });
-      div.addEventListener('mouseup', cancelHold);
-      div.addEventListener('mouseleave', cancelHold);
-      div.addEventListener('touchend', cancelHold);
-      div.addEventListener('touchcancel', cancelHold);
+      div.addEventListener('click', () => lockVote(div, sub.player_id));
     }
     grid.appendChild(div);
   });
@@ -1119,7 +1053,7 @@ async function renderVoting(game) {
 
 async function lockVote(el, playerId) {
   document.querySelectorAll('.photo-item').forEach(i => {
-    i.classList.remove('holding', 'floating');
+    i.classList.remove('floating');
     i.style.animationDelay = '';
   });
   el.classList.add('selected');
@@ -1157,7 +1091,7 @@ async function refreshVoteProgress() {
       if (fresh?.phase === 'voting') {
         const { data: updated } = await sb.from('games')
           .update({ phase: 'results' }).eq('id', gameId).eq('phase', 'voting').select();
-        if (updated?.length > 0) { triggerPush('results'); triggerEmail('results'); await tallyRound(round); await renderByPhase(updated[0]); return; }
+        if (updated?.length > 0) { triggerEmail('results'); await tallyRound(round); await renderByPhase(updated[0]); return; }
       }
       if (fresh?.phase === 'results') await renderByPhase(fresh);
     }, 800);
@@ -1215,17 +1149,20 @@ async function renderResults(game) {
     const d = document.createElement('div');
     d.className = 'result-row';
     d.style.borderColor = RC[rankIdx] || 'rgba(255,255,255,0.1)';
-    d.innerHTML = `<span class="result-rank">${RANK[rankIdx]||(rankIdx+1)}</span><img class="result-photo" src="${sub.photo}" alt=""><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
+    d.innerHTML = `<span class="result-rank">${RANK[rankIdx]||(rankIdx+1)}</span><img class="result-photo" src="${sub.photo}" alt="" style="cursor:pointer;"><span class="result-name">${sub.players?.name||'?'}</span><span class="result-pts">${vc} 🗳${pts?' +'+pts+'p':''}</span>`;
+    d.querySelector('.result-photo').addEventListener('click', () => openLightbox(sub.photo, sub.players?.name || '?', '', null, null, game.current_challenge));
     rl.appendChild(d);
   });
 
   const tl = document.getElementById('total-scores'); tl.innerHTML = '';
-  (players || []).forEach((p, i) => {
+  (players || []).filter(p => p.id !== currentGame?.goran_player_id).forEach((p, i) => {
     const d = document.createElement('div'); d.className = 'player-chip';
     d.style.borderColor = i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'rgba(255,255,255,0.1)';
     d.innerHTML = `<span class="chip-emoji">${p.emoji}</span><span class="chip-name">${p.name}${p.id===myId?' (du)':''}</span><span class="chip-score">${p.score}p</span>`;
     tl.appendChild(d);
   });
+  const amHostResults = (players || []).find(p => p.id === myId)?.is_host || false;
+  document.getElementById('back-to-lobby-btn').style.display = amHostResults ? '' : 'none';
 }
 
 async function backToLobby() {
