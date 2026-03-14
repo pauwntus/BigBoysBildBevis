@@ -1016,6 +1016,7 @@ async function refreshSubProgress() {
 // ── Voting ────────────────────────────────────────────
 async function renderVoting(game) {
   selectedVoteFor = null;
+  document.getElementById('voting-grid').innerHTML = '';
   const badge = document.getElementById('voting-challenge-badge');
   if (badge && game.current_challenge) {
     badge.textContent = (game.current_challenge_emoji ? game.current_challenge_emoji + ' ' : '') + game.current_challenge;
